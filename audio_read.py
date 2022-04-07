@@ -35,7 +35,7 @@ def plot_audio_signal(signal, sample_rate, samples=10000, plot_max_samples=5000,
     fig, axes = plt.subplots(nrows=2, ncols=1, num='Audio Signal Plot')
 
     # Audio Spectrum Plot
-    axes[0].set_title('Audio Spectrum')
+    axes[0].set_title('Time Domain')
     axes[0].set_xlim([0, plot_max_samples])
     axes[0].grid()
     axes[0].set_xlabel('Sample')
@@ -48,7 +48,9 @@ def plot_audio_signal(signal, sample_rate, samples=10000, plot_max_samples=5000,
     yf = fft(signal[:samples])
     xf = fftfreq(samples, 1 / sample_rate)[:samples // 2]
 
-    axes[1].set_title('Frequency Spectrum')
+    frequencies = dict(zip(xf, samples * np.abs(yf[0:samples // 2])))
+
+    axes[1].set_title('Frequency Domain (Fundamental Frequency: ' + str(max(frequencies, key=frequencies.get)) + ' Hz)')
     axes[1].set_xlim([0, plot_max_freq])
     axes[1].grid()
     axes[1].set_xlabel('Frequency (Hz)')
