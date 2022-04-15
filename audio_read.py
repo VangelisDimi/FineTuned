@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pyaudio
 from audio_utils import audio_fft, frequency_to_note
-import sounddevice as sd
 
 def read_audio_file(file_name):
     """
@@ -34,16 +33,6 @@ def read_real_time_audio():
         rate = 44100
         record_seconds = 20
         chunk_size = 22050
-
-        #Get input devices
-        # input_devices = []
-        # devices=sd.query_devices()
-        # print(sd.query_devices())
-        # for i in range(len(devices)):
-        #     print(devices[i])
-        #     if devices[i]['max_input_channels']>0:
-        #         input_devices.append({'index':i,'name':devices[i]['name']})
-        # print(input_devices)
 
         p = pyaudio.PyAudio()
         stream = p.open(format=pyaudio.paFloat32, channels=1, rate=rate, input=True, frames_per_buffer=chunk_size)

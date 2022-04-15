@@ -46,13 +46,17 @@ def frequency_to_note(input_frequency):
         'G': [98.00, 196.00, 392.00, 784.00, 1568.00],
         'Ab': [103.83, 207.66, 415.32, 830.64, 1661.28]
     }
-    frequency_range=15
+    frequency_threshold=15
+    min_frequency=80
+    max_frequency=1000
+
+    if input_frequency <= min_frequency or input_frequency >= max_frequency: return None,None
 
     closest_frequency = None
     closest_note = None
     for note in note_frequencies.keys():
         for frequency in note_frequencies[note]:
-            if abs(input_frequency - frequency)<frequency_range and (closest_frequency is None or (abs(input_frequency - frequency) < abs(input_frequency - closest_frequency))):
+            if abs(input_frequency - frequency)<frequency_threshold and (closest_frequency is None or (abs(input_frequency - frequency) < abs(input_frequency - closest_frequency))):
                 closest_frequency = frequency
                 closest_note = note
 
