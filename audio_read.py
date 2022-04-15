@@ -1,8 +1,8 @@
 from scipy.io import wavfile
-from scipy.fft import fft, fftfreq
 import matplotlib.pyplot as plt
 import numpy as np
 import pyaudio
+from audio_utils import audio_fft
 
 
 def read_audio_file(file_name):
@@ -39,7 +39,7 @@ def read_real_time_audio():
         stream = p.open(format=pyaudio.paFloat32, channels=1, rate=rate, input=True, frames_per_buffer=chunk_size)
 
         # iteratively read from audio stream
-        for _ in range(0, int(rate / chunk_size * record_seconds)):
+        while True:
             data = stream.read(chunk_size)
             np_data = np.frombuffer(data, dtype=np.float32)
             yield rate, np_data
@@ -76,13 +76,10 @@ def plot_audio_signal(signal, sample_rate, samples=None, plot_max_samples=5000, 
     if samples is None:
         samples = len(signal)
 
-    yf = fft(signal[:samples])
-    xf = fftfreq(samples, 1 / sample_rate)[:samples // 2]
-
-    frequencies = dict(zip(xf, samples * np.abs(yf[0:samples // 2])))
+    frequencies, xf, yf, loudest_frequency = audio_fft(signal, sample_rate, samples)
 
     axes[1].set_title(
-        'Frequency Domain (Fundamental Frequency: ' + str(round(max(frequencies, key=frequencies.get), 2)) + ' Hz)')
+        'Frequency Domain (Fundamental Frequency: ' + str(round(loudest_frequency, 2) + ' Hz)'))
     axes[1].set_xlim([0, plot_max_freq])
     axes[1].grid()
     axes[1].set_xlabel('Frequency (Hz)')
@@ -99,5 +96,6 @@ if __name__ == '__main__':
 
     audio_generator = read_real_time_audio()
     for sample_rate, signal in audio_generator:
-        plot_audio_signal(signal, sample_rate)
+        _, _, _, loudest_frequency = audio_fft(signal, sample_rate)
+        print(loudest_frequency)
     audio_generator.close()
