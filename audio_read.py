@@ -2,6 +2,7 @@ from scipy.io import wavfile
 from scipy.fft import fft, fftfreq
 import matplotlib.pyplot as plt
 import numpy as np
+import pyaudio
 
 
 def read_audio_file(file_name):
@@ -22,9 +23,36 @@ def read_audio_file(file_name):
         raise Exception('Unsupported Audio Format')
 
 
-def plot_audio_signal(signal, sample_rate, samples=10000, plot_max_samples=5000, plot_max_freq=1000):
+def read_real_time_audio():
     """
-    Plots an audio signal in audio and frequency spectrum
+    Reads real time audio from audio input and yields audio signal in numpy array format
+
+    :return: a tuple with the sample rate and audio signal in numpy array format
+    """
+
+    try:
+        rate = 44100
+        record_seconds = 20
+        chunk_size = 22050
+
+        p = pyaudio.PyAudio()
+        stream = p.open(format=pyaudio.paFloat32, channels=1, rate=rate, input=True, frames_per_buffer=chunk_size)
+
+        # iteratively read from audio stream
+        for _ in range(0, int(rate / chunk_size * record_seconds)):
+            data = stream.read(chunk_size)
+            np_data = np.frombuffer(data, dtype=np.float32)
+            yield rate, np_data
+
+    finally:
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
+
+
+def plot_audio_signal(signal, sample_rate, samples=None, plot_max_samples=5000, plot_max_freq=1000):
+    """
+    Plots an audio signal in audio and frequency domain
 
     :param signal: the audio signal in numpy array format
     :param sample_rate: the sample rate of the audio signal
@@ -34,7 +62,7 @@ def plot_audio_signal(signal, sample_rate, samples=10000, plot_max_samples=5000,
     """
     fig, axes = plt.subplots(nrows=2, ncols=1, num='Audio Signal Plot')
 
-    # Audio Spectrum Plot
+    # Time Domain Plot
     axes[0].set_title('Time Domain')
     axes[0].set_xlim([0, plot_max_samples])
     axes[0].grid()
@@ -42,15 +70,19 @@ def plot_audio_signal(signal, sample_rate, samples=10000, plot_max_samples=5000,
     axes[0].set_ylabel('Amplitude')
     axes[0].plot(signal)
 
-    # Frequency Spectrum Plot
+    # Frequency Domain Plot
 
     # Fast Fourier Transform
+    if samples is None:
+        samples = len(signal)
+
     yf = fft(signal[:samples])
     xf = fftfreq(samples, 1 / sample_rate)[:samples // 2]
 
     frequencies = dict(zip(xf, samples * np.abs(yf[0:samples // 2])))
 
-    axes[1].set_title('Frequency Domain (Fundamental Frequency: ' + str(max(frequencies, key=frequencies.get)) + ' Hz)')
+    axes[1].set_title(
+        'Frequency Domain (Fundamental Frequency: ' + str(round(max(frequencies, key=frequencies.get), 2)) + ' Hz)')
     axes[1].set_xlim([0, plot_max_freq])
     axes[1].grid()
     axes[1].set_xlabel('Frequency (Hz)')
@@ -62,5 +94,10 @@ def plot_audio_signal(signal, sample_rate, samples=10000, plot_max_samples=5000,
 
 
 if __name__ == '__main__':
-    sample_rate, left_channel, right_channel = read_audio_file('audio_samples/Guitar-E.wav')
-    plot_audio_signal(left_channel, sample_rate)
+    # sample_rate, left_channel, right_channel = read_audio_file('audio_samples/Guitar-G.wav')
+    # plot_audio_signal(left_channel, sample_rate)
+
+    audio_generator = read_real_time_audio()
+    for sample_rate, signal in audio_generator:
+        plot_audio_signal(signal, sample_rate)
+    audio_generator.close()
