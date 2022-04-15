@@ -2,7 +2,7 @@ from scipy.io import wavfile
 import matplotlib.pyplot as plt
 import numpy as np
 import pyaudio
-from audio_utils import audio_fft
+from audio_utils import audio_fft, frequency_to_note
 
 
 def read_audio_file(file_name):
@@ -97,5 +97,16 @@ if __name__ == '__main__':
     audio_generator = read_real_time_audio()
     for sample_rate, signal in audio_generator:
         _, _, _, loudest_frequency = audio_fft(signal, sample_rate)
-        print(loudest_frequency)
+        closest_frequency, closest_note = frequency_to_note(loudest_frequency)
+        tune_direction = None
+        if abs(loudest_frequency - closest_frequency) > 0.5:
+            if loudest_frequency < closest_frequency:
+                tune_direction = '↑'
+            else:
+                tune_direction = '↓'
+        else:
+            tune_direction = '✓'
+
+        print(str(loudest_frequency) + 'Hz (' + str(frequency_to_note(loudest_frequency)[1]) + ') ' + tune_direction)
+
     audio_generator.close()
