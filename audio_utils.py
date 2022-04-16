@@ -9,7 +9,8 @@ def audio_fft(signal, sample_rate, samples=None):
     :param signal: the input audio signal in numpy array format
     :param sample_rate: the sample rate of the audio signal
     :param samples: the number of samples to consider
-    :return: a tuple with dictionary with frequencies as keys and amplitudes as values, xf and yf and loudest frequency
+    :return: a tuple with dictionary with frequencies as keys and amplitudes as values, xf and yf, loudest frequency and
+    loudest frequency amplitude
     """
 
     if samples is None:
@@ -18,16 +19,18 @@ def audio_fft(signal, sample_rate, samples=None):
     xf = fftfreq(samples, 1 / sample_rate)[:samples // 2]
 
     frequencies = dict(zip(xf, samples * np.abs(yf[0:samples // 2])))
-    return frequencies, xf, yf, max(frequencies, key=frequencies.get)
+    loudest_frequency = max(frequencies, key=frequencies.get)
+    return frequencies, xf, yf, loudest_frequency, frequencies[loudest_frequency]
 
 
 # TODO: find a more efficient way to calculate closest frequency
 # TODO: support more tunings (not only 440 Hz)
 # TODO: find octave of closest note
-def frequency_to_note(input_frequency):
+def frequency_to_note(input_frequency, input_frequency_amplitude):
     """
 
-    :param input_frequency:
+    :param input_frequency: the loudest input frequency (fundamental)
+    :param input_frequency_amplitude: the amplitude of the input frequency
     :return: a tuple with closest note frequency and closest note name
     """
 
@@ -46,17 +49,21 @@ def frequency_to_note(input_frequency):
         'G': [98.00, 196.00, 392.00, 784.00, 1568.00],
         'Ab': [103.83, 207.66, 415.32, 830.64, 1661.28]
     }
-    frequency_threshold=15
-    min_frequency=80
-    max_frequency=1000
+    frequency_threshold = 15
+    amplitude_threshold = 2000  # TODO: play with threshold on different devices
+    min_frequency = 80
+    max_frequency = 1000
 
-    if input_frequency <= min_frequency or input_frequency >= max_frequency: return None,None
+    if input_frequency <= min_frequency or input_frequency >= max_frequency or \
+            input_frequency_amplitude < amplitude_threshold:
+        return None, None
 
     closest_frequency = None
     closest_note = None
     for note in note_frequencies.keys():
         for frequency in note_frequencies[note]:
-            if abs(input_frequency - frequency)<frequency_threshold and (closest_frequency is None or (abs(input_frequency - frequency) < abs(input_frequency - closest_frequency))):
+            if abs(input_frequency - frequency) < frequency_threshold and (closest_frequency is None or (
+                    abs(input_frequency - frequency) < abs(input_frequency - closest_frequency))):
                 closest_frequency = frequency
                 closest_note = note
 

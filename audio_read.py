@@ -4,6 +4,7 @@ import numpy as np
 import pyaudio
 from audio_utils import audio_fft, frequency_to_note
 
+
 def read_audio_file(file_name):
     """
     Converts an audio file to an audio signal in numpy array format
@@ -75,10 +76,10 @@ def plot_audio_signal(signal, sample_rate, samples=None, plot_max_samples=5000, 
     if samples is None:
         samples = len(signal)
 
-    frequencies, xf, yf, loudest_frequency = audio_fft(signal, sample_rate, samples)
+    frequencies, xf, yf, loudest_frequency, _ = audio_fft(signal, sample_rate, samples)
 
     axes[1].set_title(
-        'Frequency Domain (Fundamental Frequency: ' + str(round(loudest_frequency, 2) + ' Hz)'))
+        'Frequency Domain (Fundamental Frequency: ' + str(round(loudest_frequency, 2)) + ' Hz)')
     axes[1].set_xlim([0, plot_max_freq])
     axes[1].grid()
     axes[1].set_xlabel('Frequency (Hz)')
@@ -90,14 +91,13 @@ def plot_audio_signal(signal, sample_rate, samples=None, plot_max_samples=5000, 
 
 
 if __name__ == '__main__':
-    # sample_rate, left_channel, right_channel = read_audio_file('audio_samples/Guitar-G.wav')
-    # plot_audio_signal(left_channel, sample_rate)
+
     audio_generator = read_real_time_audio()
     for sample_rate, signal in audio_generator:
-        _, _, _, loudest_frequency = audio_fft(signal, sample_rate)
-        closest_frequency, closest_note = frequency_to_note(loudest_frequency)
+        _, _, _, loudest_frequency, loudest_frequency_amplitude = audio_fft(signal, sample_rate)
+        closest_frequency, closest_note = frequency_to_note(loudest_frequency, loudest_frequency_amplitude)
         tune_direction = None
-        
+
         if closest_frequency is not None and closest_note is not None:
             if abs(loudest_frequency - closest_frequency) > 0.5:
                 if loudest_frequency < closest_frequency:
@@ -107,6 +107,7 @@ if __name__ == '__main__':
             else:
                 tune_direction = '✓'
 
-            print(str(loudest_frequency) + 'Hz (' + str(frequency_to_note(loudest_frequency)[1]) + ') ' + tune_direction)
+            print(
+                str(loudest_frequency) + 'Hz (' + str(closest_note) + ') ' + tune_direction)
 
     audio_generator.close()
