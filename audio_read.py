@@ -91,23 +91,4 @@ def plot_audio_signal(signal, sample_rate, samples=None, plot_max_samples=5000, 
 
 
 if __name__ == '__main__':
-
-    audio_generator = read_real_time_audio()
-    for sample_rate, signal in audio_generator:
-        _, _, _, loudest_frequency, loudest_frequency_amplitude = audio_fft(signal, sample_rate)
-        closest_frequency, closest_note = frequency_to_note(loudest_frequency, loudest_frequency_amplitude)
-        tune_direction = None
-
-        if closest_frequency is not None and closest_note is not None:
-            if abs(loudest_frequency - closest_frequency) > 0.5:
-                if loudest_frequency < closest_frequency:
-                    tune_direction = '↑'
-                else:
-                    tune_direction = '↓'
-            else:
-                tune_direction = '✓'
-
-            print(
-                str(loudest_frequency) + 'Hz (' + str(closest_note) + ') ' + tune_direction)
-
-    audio_generator.close()
+    pass

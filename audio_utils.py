@@ -68,3 +68,7 @@ def frequency_to_note(input_frequency, input_frequency_amplitude):
                 closest_note = note
 
     return closest_frequency, closest_note
+
+
+if __name__ == '__main__':
+    pass
