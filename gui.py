@@ -12,6 +12,7 @@ class main_window(tk.Tk):
         super().__init__()
 
         self.title("PyTuner")
+        self.iconbitmap("Assets/icon_128.ico")
         self.geometry("400x400")
 
         #Note Display
@@ -25,21 +26,23 @@ class main_window(tk.Tk):
     def update_labels(self,Note):
         # update all labels
         self.Note_label.configure(text=Note)
-        self.after(2000, self.clear_labels)
 
 def main_gui():
     app = main_window()
-    app.mainloop()
 
     audio_generator = read_real_time_audio()
 
-    for sample_rate, signal in audio_generator:
+    def update_labels():
+        sample_rate, signal=next(audio_generator)
         _, _, _, loudest_frequency, loudest_frequency_amplitude = audio_fft(signal, sample_rate)
         closest_frequency, closest_note = frequency_to_note(loudest_frequency, loudest_frequency_amplitude)
         tune_direction = None
-
+        
         if closest_frequency is not None and closest_note is not None:
             app.update_labels(closest_note)
-        app.update()
+
+        app.after(500,update_labels)
     
+    update_labels()
+    app.mainloop()
     audio_generator.close()
