@@ -33,7 +33,7 @@ def read_real_time_audio():
     try:
         rate = 44100
         record_seconds = 20
-        chunk_size = 22050
+        chunk_size = 44100
 
         p = pyaudio.PyAudio()
         stream = p.open(format=pyaudio.paFloat32, channels=1, rate=rate, input=True, frames_per_buffer=chunk_size)
