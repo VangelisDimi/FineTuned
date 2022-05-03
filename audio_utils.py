@@ -50,7 +50,7 @@ def frequency_to_note(input_frequency, input_frequency_amplitude):
         'Ab': [103.83, 207.66, 415.32, 830.64, 1661.28]
     }
     frequency_threshold = 15
-    amplitude_threshold = 2000  # TODO: play with threshold on different devices
+    amplitude_threshold = 2000000  # TODO: play with threshold on different devices
     min_frequency = 80
     max_frequency = 1000
 

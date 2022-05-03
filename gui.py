@@ -19,7 +19,7 @@ class main_window(tk.Tk):
         self.minsize(550,400)
 
         # Note Display
-        self.Note_label = tk.Label(self, text="*", font=("LCD Solid", 70, 'bold'))
+        self.Note_label = tk.Label(self, text='*', font=("LCD Solid", 70, 'bold'))
         self.Note_label.grid(row=0,column=4)
 
         # frequency display
@@ -66,6 +66,9 @@ class main_window(tk.Tk):
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
 
+
+        self.no_update_count=0
+
     def clear_indicators(self):
         self.il4.configure(image=self.i_empty)
         self.il3.configure(image=self.i_empty)
@@ -79,7 +82,9 @@ class main_window(tk.Tk):
 
     def clear_labels(self):
         # remove text from all labels
-        self.Note_label['text'] = ""
+        # self.clear_indicators()
+        self.Note_label.configure(text='*')
+        self.freq_label.configure(text='* Hz ()')
 
     def update_labels(self, Note, frequency,tune_direction,tune_level):
         # update all labels
@@ -94,8 +99,8 @@ class main_window(tk.Tk):
 
 def main_gui():
     app = main_window()
-
     audio_generator = read_real_time_audio()
+    no_update_count=0
 
     def update_labels():
         sample_rate, signal = next(audio_generator)
@@ -125,6 +130,13 @@ def main_gui():
                 tune_level=1
 
             app.update_labels(closest_note, loudest_frequency , tune_direction , tune_level)
+            app.no_update_count=0
+        else:
+            app.no_update_count+=1
+            if app.no_update_count==3:
+                app.clear_labels()
+                app.no_update_count=0
+
 
         app.after(1000, update_labels)
 
