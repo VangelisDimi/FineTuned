@@ -58,8 +58,6 @@ def frequency_to_note(input_frequency, input_frequency_amplitude):
             input_frequency_amplitude < amplitude_threshold:
         return None, None
 
-    print(input_frequency_amplitude)
-
     closest_frequency = None
     closest_note = None
     for note in note_frequencies.keys():
