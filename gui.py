@@ -32,68 +32,68 @@ class main_window(tk.Tk):
         scaling_factor=3
         
         self.i_empty = ImageTk.PhotoImage(Image.open("Assets/Indicators/indicator_empty.png").resize((i_w*scaling_factor,i_h*scaling_factor),resample=Image.NEAREST))
-        #left
-        self.il4 = tk.Label(self, image=self.i_empty)
-        self.il4.grid(row=0,column=0)
-        self.il3 = tk.Label(self, image=self.i_empty)
-        self.il3.grid(row=0,column=1)
-        self.il2 = tk.Label(self, image=self.i_empty)
-        self.il2.grid(row=0,column=2)
-        self.il1 = tk.Label(self, image=self.i_empty)
-        self.il1.grid(row=0,column=3)
+        self.indicator_img=[]
+        for i in range(4):
+            self.indicator_img.append(
+                ImageTk.PhotoImage(Image.open("Assets/Indicators/indicator_{}.png".format(i)).resize((i_w*scaling_factor,i_h*scaling_factor),resample=Image.NEAREST)))
+
+        #Left
+        self.left_indicators=[]
+        for i in range (4):
+            self.left_indicators.append(tk.Label(self, image=self.i_empty))
+            self.left_indicators[i].grid(row=0,column=i)
         #Right
-        self.ir1 = tk.Label(self, image=self.i_empty)
-        self.ir1.grid(row=0,column=5)
-        self.ir2 = tk.Label(self, image=self.i_empty)
-        self.ir2.grid(row=0,column=6)
-        self.ir3 = tk.Label(self, image=self.i_empty)
-        self.ir3.grid(row=0,column=7)
-        self.ir4 = tk.Label(self, image=self.i_empty)
-        self.ir4.grid(row=0,column=8)
+        self.right_indicators=[]
+        for i in range (4):
+            self.right_indicators.append(tk.Label(self, image=self.i_empty))
+            self.right_indicators[i].grid(row=0,column=i+5)
 
 
         #Grid configure
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=1)
-        self.grid_columnconfigure(2, weight=1)
-        self.grid_columnconfigure(3, weight=1)
-        self.grid_columnconfigure(4, weight=1)
-        self.grid_columnconfigure(5, weight=1)
-        self.grid_columnconfigure(6, weight=1)
-        self.grid_columnconfigure(7, weight=1)
-        self.grid_columnconfigure(8, weight=1)
+        for i in range(9):
+            self.grid_columnconfigure(i, weight=1)
         #Row configure
-        self.rowconfigure(0, weight=1)
-        self.rowconfigure(1, weight=1)
+        for i in range(2):
+            self.rowconfigure(i, weight=1)
 
 
         self.no_update_count=0
+        self.updated_indicator=None
+        self.last_direction=None
 
-    def clear_indicators(self):
-        self.il4.configure(image=self.i_empty)
-        self.il3.configure(image=self.i_empty)
-        self.il2.configure(image=self.i_empty)
-        self.il1.configure(image=self.i_empty)
-        self.ir4.configure(image=self.i_empty)
-        self.ir3.configure(image=self.i_empty)
-        self.ir2.configure(image=self.i_empty)
-        self.ir1.configure(image=self.i_empty)
-        self.Note_label.configure(fg="black")
+    def clear_indicator(self):
+        if self.last_direction==None: return
+
+        if self.last_direction=='✓':
+            self.Note_label.configure(fg="black")
+        else:
+            self.updated_indicator.configure(image=self.i_empty)
+
+        self.last_direction=None
+        self.updated_indicator=None
 
     def clear_labels(self):
         # remove text from all labels
-        # self.clear_indicators()
+        self.clear_indicator()
         self.Note_label.configure(text='*')
         self.freq_label.configure(text='* Hz ()')
 
-    def update_labels(self, Note, frequency,tune_direction,tune_level):
+    def update_labels(self, Note, frequency,tune_direction,tune_level,tune_amount):
         # update all labels
-        # self.clear_indicators()
+        self.clear_indicator()
         self.Note_label.configure(text=Note)
-        self.freq_label.configure(text=(frequency,"Hz","({})".format(tune_direction)))
+        self.freq_label.configure(text=(frequency,"Hz","({}{})".format(tune_direction,tune_amount)))
 
+        #Update indicators
         if tune_direction == '✓':
             self.Note_label.configure(fg="#00ff1b")
+        elif tune_direction == '↑':
+            self.right_indicators[tune_level].configure(image=self.indicator_img[tune_level])
+            self.updated_indicator=self.right_indicators[tune_level]
+        elif tune_direction == '↓':
+            self.left_indicators[abs(tune_level-3)].configure(image=self.indicator_img[tune_level])
+            self.updated_indicator= self.left_indicators[abs(tune_level-3)]
+        self.last_direction=tune_direction
 
 
 
@@ -120,16 +120,16 @@ def main_gui():
                 tune_direction = '✓'
 
             #Find tune level
-            if abs(loudest_frequency - closest_frequency) > 100:
-                tune_level=4
-            elif abs(loudest_frequency - closest_frequency) > 50:
+            if abs(loudest_frequency - closest_frequency) > 20:
                 tune_level=3
-            elif abs(loudest_frequency - closest_frequency) > 25:
-                tune_level=2
             elif abs(loudest_frequency - closest_frequency) > 10:
+                tune_level=2
+            elif abs(loudest_frequency - closest_frequency) > 5:
                 tune_level=1
+            elif abs(loudest_frequency - closest_frequency) > 0.5:
+                tune_level=0
 
-            app.update_labels(closest_note, loudest_frequency , tune_direction , tune_level)
+            app.update_labels(closest_note, loudest_frequency , tune_direction , tune_level,abs(loudest_frequency - closest_frequency))
             app.no_update_count=0
         else:
             app.no_update_count+=1
