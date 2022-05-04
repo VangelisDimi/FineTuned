@@ -82,15 +82,15 @@ class main_window(tk.Tk):
         # update all labels
         self.clear_indicator()
         self.Note_label.configure(text=Note)
-        self.freq_label.configure(text=(frequency,"Hz","({}{})".format(tune_direction,tune_amount)))
+        self.freq_label.configure(text=(frequency,"Hz","({}{})".format(tune_direction,round(tune_amount,2))))
 
         #Update indicators
         if tune_direction == '✓':
             self.Note_label.configure(fg="#00ff1b")
-        elif tune_direction == '↑':
+        elif tune_direction == '↓':
             self.right_indicators[tune_level].configure(image=self.indicator_img[tune_level])
             self.updated_indicator=self.right_indicators[tune_level]
-        elif tune_direction == '↓':
+        elif tune_direction == '↑':
             self.left_indicators[abs(tune_level-3)].configure(image=self.indicator_img[tune_level])
             self.updated_indicator= self.left_indicators[abs(tune_level-3)]
         self.last_direction=tune_direction
