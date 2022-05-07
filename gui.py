@@ -21,7 +21,7 @@ class main_window(tk.Tk):
 
         # Note Display
         self.Note_label = tk.Label(self, text='*', font=("LCD Solid", 70, 'bold'), width=5)
-        self.grid_columnconfigure(4, weight=6, uniform='a')
+        self.grid_columnconfigure(4, weight=6)
         self.Note_label.grid(row=0, column=4)
 
 
@@ -47,13 +47,13 @@ class main_window(tk.Tk):
         self.left_indicators = []
         for i in range(4):
             self.left_indicators.append(tk.Label(self, image=self.i_empty))
-            self.grid_columnconfigure(i, weight=1, uniform='a')
+            self.grid_columnconfigure(i, weight=1)
             self.left_indicators[i].grid(row=0, column=i)
         # Right
         self.right_indicators = []
         for i in range(4):
             self.right_indicators.append(tk.Label(self, image=self.i_empty))
-            self.grid_columnconfigure(i + 5, weight=1, uniform='a')
+            self.grid_columnconfigure(i + 5, weight=1)
 
             self.right_indicators[i].grid(row=0, column=i + 5)
 
