@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.fft import fft, fftfreq
+import math
 
 
 def audio_fft(signal, sample_rate, samples=None):
@@ -49,6 +50,7 @@ def frequency_to_note(input_frequency, input_frequency_amplitude):
         'G': [98.00, 196.00, 392.00, 784.00, 1568.00],
         'Ab': [103.83, 207.66, 415.32, 830.64, 1661.28]
     }
+
     frequency_threshold = 15
     amplitude_threshold = 1000000  # TODO: play with threshold on different devices
     min_frequency = 80
@@ -70,5 +72,19 @@ def frequency_to_note(input_frequency, input_frequency_amplitude):
     return closest_frequency, closest_note
 
 
+def neighbour_note_frequency(note_frequency, frequency):
+    f_o = 440.0
+    a = 2 ** (1 / 12)
+
+    n = math.log(note_frequency / f_o, a)
+
+    if frequency > note_frequency:
+        return f_o * a ** (n + 1)
+    elif frequency < note_frequency:
+        return f_o * a ** (n - 1)
+
+    return None
+
+
 if __name__ == '__main__':
-    pass
+    print(neighbour_note_frequency(440, 441))
