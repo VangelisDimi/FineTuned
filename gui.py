@@ -1,11 +1,10 @@
-import tkinter
 import tkinter as tk
 from PIL import ImageTk, Image
+import winsound
+import pyglet
 
 from audio_read import read_real_time_audio
-from audio_utils import audio_fft, frequency_to_note
-
-import pyglet
+from audio_utils import audio_fft, frequency_to_note,neighbour_note_frequency
 
 pyglet.font.add_file('Assets/LcdSolid-VPzB.ttf')
 
@@ -66,6 +65,7 @@ class main_window(tk.Tk):
         self.no_update_count = 0
         self.updated_indicator = None
         self.last_direction = None
+        self.previous_note = None
 
     def clear_indicator(self):
         if self.last_direction == None: return
@@ -94,12 +94,17 @@ class main_window(tk.Tk):
         # Update indicators
         if tune_direction == '✓':
             self.Note_label.configure(fg="#00ff1b")
+            if Note != self.previous_note:
+                winsound.PlaySound('Assets/tune_sound.wav', winsound.SND_FILENAME + winsound.SND_ASYNC)
+                self.previous_note=Note
         elif tune_direction == '↓':
             self.right_indicators[tune_level].configure(image=self.indicator_img[tune_level])
             self.updated_indicator = self.right_indicators[tune_level]
+            self.previous_note=None
         elif tune_direction == '↑':
             self.left_indicators[abs(tune_level - 3)].configure(image=self.indicator_img[tune_level])
             self.updated_indicator = self.left_indicators[abs(tune_level - 3)]
+            self.previous_note=None
         self.last_direction = tune_direction
 
 
@@ -126,14 +131,18 @@ def main_gui():
                 tune_direction = '✓'
 
             # Find tune level
-            if abs(loudest_frequency - closest_frequency) > 20:
-                tune_level = 3
-            elif abs(loudest_frequency - closest_frequency) > 10:
-                tune_level = 2
-            elif abs(loudest_frequency - closest_frequency) > 5:
-                tune_level = 1
-            elif abs(loudest_frequency - closest_frequency) > 0.5:
-                tune_level = 0
+            if tune_direction != '✓':
+                neighbor = neighbour_note_frequency(closest_frequency,loudest_frequency)
+                distance = abs(closest_frequency - neighbor)/2
+
+                if abs(loudest_frequency - closest_frequency) > 0.8 * distance:
+                    tune_level = 3
+                elif abs(loudest_frequency - closest_frequency) > 0.6 * distance:
+                    tune_level = 2
+                elif abs(loudest_frequency - closest_frequency) > 0.3 * distance:
+                    tune_level = 1
+                elif abs(loudest_frequency - closest_frequency) > 0.5:
+                    tune_level = 0
 
             app.update_labels(closest_note, loudest_frequency, tune_direction, tune_level,
                               abs(loudest_frequency - closest_frequency))
