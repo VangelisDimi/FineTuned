@@ -111,7 +111,6 @@ class main_window(tk.Tk):
 def main_gui():
     app = main_window()
     audio_generator = read_real_time_audio()
-    no_update_count = 0
 
     def update_labels():
         sample_rate, signal = next(audio_generator)
