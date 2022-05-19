@@ -1,8 +1,6 @@
 import tkinter as tk
-from turtle import color
 from PIL import ImageTk, Image
 import winsound
-from matplotlib import image
 import pyglet
 from configparser import ConfigParser
 
@@ -10,6 +8,13 @@ from audio_read import read_real_time_audio
 from audio_utils import audio_fft, frequency_to_note, neighbour_note_frequency
 
 pyglet.font.add_file('Assets/LcdSolid-VPzB.ttf')
+
+
+def open_image(path,scaling_factor=1):
+    image = Image.open(path)
+    image = image.resize((image.width * scaling_factor, image.height * scaling_factor),
+                                 resample=Image.NEAREST)
+    return image
 
 
 class main_window(tk.Tk):
@@ -53,28 +58,14 @@ class main_window(tk.Tk):
         # Indicators
         scaling_factor = 3
 
-        i_empty = Image.open("Assets/Indicators/light/indicator_empty.png")
-        i_empty = i_empty.resize((i_empty.width * scaling_factor, i_empty.height * scaling_factor),
-                                 resample=Image.NEAREST)
-        self.i_empty_l = ImageTk.PhotoImage(i_empty)
-        i_empty = Image.open("Assets/Indicators/dark/indicator_empty.png")
-        i_empty = i_empty.resize((i_empty.width * scaling_factor, i_empty.height * scaling_factor),
-                                 resample=Image.NEAREST)
-        self.i_empty_d = ImageTk.PhotoImage(i_empty)
+        self.i_empty_l = ImageTk.PhotoImage(open_image("Assets/Indicators/light/indicator_empty.png",scaling_factor))
+        self.i_empty_d = ImageTk.PhotoImage(open_image("Assets/Indicators/dark/indicator_empty.png",scaling_factor))
 
         self.indicator_img_l = []
         self.indicator_img_d = []
         for i in range(4):
-            indicator_img = Image.open("Assets/Indicators/light/indicator_{}.png".format(i))
-            indicator_img = indicator_img.resize(
-                (indicator_img.width * scaling_factor, indicator_img.height * scaling_factor),
-                resample=Image.NEAREST)
-            self.indicator_img_l.append(ImageTk.PhotoImage(indicator_img))
-            indicator_img = Image.open("Assets/Indicators/dark/indicator_{}.png".format(i))
-            indicator_img = indicator_img.resize(
-                (indicator_img.width * scaling_factor, indicator_img.height * scaling_factor),
-                resample=Image.NEAREST)
-            self.indicator_img_d.append(ImageTk.PhotoImage(indicator_img))
+            self.indicator_img_l.append(ImageTk.PhotoImage(open_image("Assets/Indicators/light/indicator_{}.png".format(i),scaling_factor)))
+            self.indicator_img_d.append(ImageTk.PhotoImage(open_image("Assets/Indicators/dark/indicator_{}.png".format(i),scaling_factor)))
 
         if self.color_mode == 'light':
             self.indicator_img=self.indicator_img_l
@@ -125,14 +116,17 @@ class main_window(tk.Tk):
             self.fg = self.light_color
 
         # Sound control button
-        i_sound_on = Image.open("Assets/buttons/sound.png")
-        i_sound_on = i_sound_on.resize((i_sound_on.width * scaling_factor, i_sound_on.height * scaling_factor),
-                                       resample=Image.NEAREST)
-        self.i_sound_on = ImageTk.PhotoImage(i_sound_on)
-        i_sound_off = Image.open("Assets/buttons/mute.png")
-        i_sound_off = i_sound_off.resize((i_sound_off.width * scaling_factor, i_sound_off.height * scaling_factor),
-                                         resample=Image.NEAREST)
-        self.i_sound_off = ImageTk.PhotoImage(i_sound_off)
+        self.i_sound_on_l = ImageTk.PhotoImage(open_image("Assets/buttons/sound_light.png",scaling_factor))
+        self.i_sound_off_l = ImageTk.PhotoImage(open_image("Assets/buttons/mute_light.png",scaling_factor))
+        self.i_sound_on_d = ImageTk.PhotoImage(open_image("Assets/buttons/sound_dark.png",scaling_factor))
+        self.i_sound_off_d = ImageTk.PhotoImage(open_image("Assets/buttons/mute_dark.png",scaling_factor))
+
+        if self.color_mode == 'light':
+            self.i_sound_on = self.i_sound_on_l
+            self.i_sound_off = self.i_sound_off_l
+        else:
+            self.i_sound_on = self.i_sound_on_d
+            self.i_sound_off = self.i_sound_off_d
 
         if self.sound_on:
             self.sound_mute_b = tk.Button(image=self.i_sound_on,bd=0, command=self.sound_button_pressed)
@@ -219,6 +213,10 @@ class main_window(tk.Tk):
         self.freq_label.configure(background=self.bg, foreground=self.fg)
 
         self.sound_mute_b.configure(bg=self.bg, activebackground=self.bg)
+        if self.sound_on:
+            self.sound_mute_b.configure(image=self.i_sound_on)
+        else:
+            self.sound_mute_b.configure(image=self.i_sound_off)
 
         for i in range(4):
             self.left_indicators[i].configure(image=self.i_empty,bg=self.bg, fg=self.fg)
@@ -239,6 +237,9 @@ class main_window(tk.Tk):
             self.i_empty = self.i_empty_d
 
             self.color_mode_icon = self.color_mode_light
+
+            self.i_sound_on = self.i_sound_on_d
+            self.i_sound_off = self.i_sound_off_d
         else:
             self.color_mode = 'light'
             self.bg = self.light_color
@@ -248,6 +249,10 @@ class main_window(tk.Tk):
             self.i_empty = self.i_empty_l
 
             self.color_mode_icon = self.color_mode_dark
+
+            self.i_sound_on = self.i_sound_on_l
+            self.i_sound_off = self.i_sound_off_l
+
         self.update_color()
 
 
