@@ -1,4 +1,5 @@
 import tkinter as tk
+from turtle import color
 from PIL import ImageTk, Image
 import winsound
 import pyglet
@@ -16,22 +17,24 @@ class main_window(tk.Tk):
 
         self.title("PyTuner")
         self.iconbitmap("Assets/icon_128.ico")
-        self.color_mode = 'light'
         self.geometry("550x400")
         self.minsize(550, 400)
+
+        self.light_color = 'white'
+        self.dark_color = '#262b2f'
+        self.bg = None
+        self.fg = None
 
         # Note Display
         self.Note_label = tk.Label(self, text='*', font=("LCD Solid", 70, 'bold'), width=5)
         self.columnconfigure(4, weight=6)
         self.Note_label.grid(row=0, column=4)
 
-        # frequency display
+        # Frequency display
         self.freq_label = tk.Label(self, text='* Hz ()', font=('LCD Solid', 25))
         self.freq_label.grid(row=1, columnspan=9)
 
         # Indicators
-        i_w = 7
-        i_h = 24
         scaling_factor = 3
 
         i_empty = Image.open("Assets/Indicators/indicator_empty.png")
@@ -62,19 +65,8 @@ class main_window(tk.Tk):
             self.right_indicators[i].grid(row=0, column=i + 5)
 
         # Row configure
-        for i in range(2):
+        for i in range(3):
             self.rowconfigure(i, weight=1)
-
-        self.settings_frame = tk.Frame(self)
-        self.settings_frame.grid(row=2, columnspan=9)
-
-        self.color_mode_dark = tk.PhotoImage(file="Assets/buttons/color_mode_dark.png")
-        self.color_mode_light = tk.PhotoImage(file="Assets/buttons/color_mode_light.png")
-
-        self.color_mode_button = tk.Button(self, bd=0, image=self.color_mode_dark,
-                                           command=self.switch_color_mode)
-
-        self.color_mode_button.grid(row=2, column=5, columnspan=4)
 
         # App settings
         self.config = ConfigParser()
@@ -83,11 +75,36 @@ class main_window(tk.Tk):
                 self.config.read_file(f)
         except:
             self.config['sound'] = {'sound_on': 'True'}
+            self.config['color'] = {'color_mode' : 'light'}
             with open('settings.ini', 'w') as configfile:
                 self.config.write(configfile)
 
         self.config.read('setting.ini')
         self.sound_on = self.config.getboolean('sound', 'sound_on')
+        self.color_mode = self.config['color']['color_mode']
+
+        #Settings frame
+        self.settings_frame = tk.Frame(self)
+        self.settings_frame.grid(row=2, columnspan=9)
+
+        #Color mode button
+        self.color_mode_dark = tk.PhotoImage(file="Assets/buttons/color_mode_dark.png")
+        self.color_mode_light = tk.PhotoImage(file="Assets/buttons/color_mode_light.png")
+        
+        if self.color_mode == 'light':
+            self.color_mode_button = tk.Button(self, bd=0, image=self.color_mode_dark,
+                                            command=self.switch_color_mode)
+        else:
+             self.color_mode_button = tk.Button(self, bd=0, image=self.color_mode_light,
+                                            command=self.switch_color_mode)
+        self.color_mode_button.grid(row=2, column=5, columnspan=4)
+
+        if self.color_mode == 'light':
+            self.bg = self.light_color
+            self.fg = self.dark_color
+        else:
+            self.bg = self.dark_color
+            self.fg = self.light_color
 
         # Sound control button
         i_sound_on = Image.open("Assets/sound.png")
@@ -100,15 +117,17 @@ class main_window(tk.Tk):
         self.i_sound_off = ImageTk.PhotoImage(i_sound_off)
 
         if self.sound_on:
-            self.sound_mute_b = tk.Button(image=self.i_sound_on, command=self.sound_button_pressed)
+            self.sound_mute_b = tk.Button(image=self.i_sound_on,bd=0, command=self.sound_button_pressed)
         else:
-            self.sound_mute_b = tk.Button(image=self.i_sound_off, command=self.sound_button_pressed)
+            self.sound_mute_b = tk.Button(image=self.i_sound_off,bd=0, command=self.sound_button_pressed)
         self.sound_mute_b.grid(row=2, column=0, columnspan=4)
 
         self.no_update_count = 0
         self.updated_indicator = None
         self.last_direction = None
         self.previous_note = None
+
+        self.update_color()
 
     def sound_button_pressed(self):
         if self.sound_on:
@@ -120,6 +139,7 @@ class main_window(tk.Tk):
     def on_exit(self):
         # Write settings to file
         self.config['sound']['sound_on'] = str(self.sound_on)
+        self.config['color']['color_mode'] = self.color_mode
         with open('settings.ini', 'w') as configfile:
             self.config.write(configfile)
 
@@ -137,12 +157,8 @@ class main_window(tk.Tk):
     def clear_labels(self):
         # remove text from all labels
         self.clear_indicator()
-        if self.color_mode == 'light':
-            self.Note_label.configure(text='*', fg='#262b2f')
-            self.freq_label.configure(text='* Hz ()', fg='#262b2f')
-        else:
-            self.Note_label.configure(text='*', fg='white')
-            self.freq_label.configure(text='* Hz ()', fg='white')
+        self.Note_label.configure(text='*', fg=self.fg)
+        self.freq_label.configure(text='* Hz ()', fg=self.fg)
 
     def update_labels(self, Note, frequency, tune_direction, tune_level, tune_amount):
         # update all labels
@@ -151,12 +167,9 @@ class main_window(tk.Tk):
         self.freq_label.configure(
             text=(round(frequency, 1), "Hz", "({}{})".format(tune_direction, round(tune_amount, 2))))
 
-        if self.color_mode == 'light':
-            self.Note_label.configure(fg='#262b2f')
-            self.freq_label.configure(fg='#262b2f')
-        else:
-            self.Note_label.configure(fg='white')
-            self.freq_label.configure(fg='white')
+        
+        self.Note_label.configure(fg=self.fg)
+        self.freq_label.configure(fg=self.fg)
 
         # Update indicators
         if tune_direction == '✓':
@@ -175,35 +188,40 @@ class main_window(tk.Tk):
             self.previous_note = None
         self.last_direction = tune_direction
 
-    def switch_color_mode(self):
-        light_color = 'white'
-        dark_color = '#262b2f'
-
+    def update_color(self):
         if self.color_mode == 'light':
-            self.color_mode_button.configure(image=self.color_mode_light, bg=dark_color, activebackground=dark_color)
-            self.color_mode = 'dark'
-            self['bg'] = dark_color
-            self.Note_label.configure(background=dark_color, foreground=light_color)
-            self.freq_label.configure(background=dark_color, foreground=light_color)
+            self.color_mode_button.configure(image=self.color_mode_dark, bg=self.bg, activebackground=self.bg)
+            self['bg'] = self.bg
+            self.Note_label.configure(background=self.bg, foreground=self.fg)
+            self.freq_label.configure(background=self.bg, foreground=self.fg)
 
             for i in self.left_indicators:
-                i.configure(bg=dark_color, fg=light_color)
+                i.configure(bg=self.bg, fg=self.fg)
 
             for i in self.right_indicators:
-                i.configure(bg=dark_color, fg=light_color)
-
+                i.configure(bg=self.bg, fg=self.fg)
         else:
-            self.color_mode_button.configure(image=self.color_mode_dark, bg=light_color, activebackground=light_color)
-            self.color_mode = 'light'
-            self['bg'] = light_color
-            self.Note_label.configure(background=light_color, foreground=dark_color)
-            self.freq_label.configure(background=light_color, foreground=dark_color)
+            self.color_mode_button.configure(image=self.color_mode_light, bg=self.bg, activebackground=self.bg)
+            self['bg'] = self.bg
+            self.Note_label.configure(background=self.bg, foreground=self.fg)
+            self.freq_label.configure(background=self.bg, foreground=self.fg)
 
             for i in self.left_indicators:
-                i.configure(bg=light_color, fg=dark_color)
+                i.configure(bg=self.bg, fg=self.fg)
 
             for i in self.right_indicators:
-                i.configure(bg=light_color, fg=dark_color)
+                i.configure(bg=self.bg, fg=self.fg)
+
+    def switch_color_mode(self):
+        if self.color_mode == 'light':
+            self.color_mode = 'dark'
+            self.bg = self.dark_color
+            self.fg = self.light_color
+        else:
+            self.color_mode = 'light'
+            self.bg = self.light_color
+            self.fg = self.dark_color
+        self.update_color()
 
 
 def main_gui():
