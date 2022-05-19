@@ -2,6 +2,7 @@ import tkinter as tk
 from turtle import color
 from PIL import ImageTk, Image
 import winsound
+from matplotlib import image
 import pyglet
 from configparser import ConfigParser
 
@@ -25,6 +26,21 @@ class main_window(tk.Tk):
         self.bg = None
         self.fg = None
 
+        # App settings
+        self.config = ConfigParser()
+        try:
+            with open('settings.ini') as f:
+                self.config.read_file(f)
+        except:
+            self.config['sound'] = {'sound_on': 'True'}
+            self.config['color'] = {'color_mode' : 'light'}
+            with open('settings.ini', 'w') as configfile:
+                self.config.write(configfile)
+
+        self.config.read('setting.ini')
+        self.sound_on = self.config.getboolean('sound', 'sound_on')
+        self.color_mode = self.config['color']['color_mode']
+
         # Note Display
         self.Note_label = tk.Label(self, text='*', font=("LCD Solid", 70, 'bold'), width=5)
         self.columnconfigure(4, weight=6)
@@ -37,18 +53,35 @@ class main_window(tk.Tk):
         # Indicators
         scaling_factor = 3
 
-        i_empty = Image.open("Assets/Indicators/indicator_empty.png")
+        i_empty = Image.open("Assets/Indicators/light/indicator_empty.png")
         i_empty = i_empty.resize((i_empty.width * scaling_factor, i_empty.height * scaling_factor),
                                  resample=Image.NEAREST)
-        self.i_empty = ImageTk.PhotoImage(i_empty)
+        self.i_empty_l = ImageTk.PhotoImage(i_empty)
+        i_empty = Image.open("Assets/Indicators/dark/indicator_empty.png")
+        i_empty = i_empty.resize((i_empty.width * scaling_factor, i_empty.height * scaling_factor),
+                                 resample=Image.NEAREST)
+        self.i_empty_d = ImageTk.PhotoImage(i_empty)
 
-        self.indicator_img = []
+        self.indicator_img_l = []
+        self.indicator_img_d = []
         for i in range(4):
-            indicator_img = Image.open("Assets/Indicators/indicator_{}.png".format(i))
+            indicator_img = Image.open("Assets/Indicators/light/indicator_{}.png".format(i))
             indicator_img = indicator_img.resize(
                 (indicator_img.width * scaling_factor, indicator_img.height * scaling_factor),
                 resample=Image.NEAREST)
-            self.indicator_img.append(ImageTk.PhotoImage(indicator_img))
+            self.indicator_img_l.append(ImageTk.PhotoImage(indicator_img))
+            indicator_img = Image.open("Assets/Indicators/dark/indicator_{}.png".format(i))
+            indicator_img = indicator_img.resize(
+                (indicator_img.width * scaling_factor, indicator_img.height * scaling_factor),
+                resample=Image.NEAREST)
+            self.indicator_img_d.append(ImageTk.PhotoImage(indicator_img))
+
+        if self.color_mode == 'light':
+            self.indicator_img=self.indicator_img_l
+            self.i_empty = self.i_empty_l
+        else:
+            self.indicator_img=self.indicator_img_d
+            self.i_empty = self.i_empty_d
 
         # Left
         self.left_indicators = []
@@ -67,21 +100,6 @@ class main_window(tk.Tk):
         # Row configure
         for i in range(3):
             self.rowconfigure(i, weight=1)
-
-        # App settings
-        self.config = ConfigParser()
-        try:
-            with open('settings.ini') as f:
-                self.config.read_file(f)
-        except:
-            self.config['sound'] = {'sound_on': 'True'}
-            self.config['color'] = {'color_mode' : 'light'}
-            with open('settings.ini', 'w') as configfile:
-                self.config.write(configfile)
-
-        self.config.read('setting.ini')
-        self.sound_on = self.config.getboolean('sound', 'sound_on')
-        self.color_mode = self.config['color']['color_mode']
 
         #Settings frame
         self.settings_frame = tk.Frame(self)
@@ -107,11 +125,11 @@ class main_window(tk.Tk):
             self.fg = self.light_color
 
         # Sound control button
-        i_sound_on = Image.open("Assets/sound.png")
+        i_sound_on = Image.open("Assets/buttons/sound.png")
         i_sound_on = i_sound_on.resize((i_sound_on.width * scaling_factor, i_sound_on.height * scaling_factor),
                                        resample=Image.NEAREST)
         self.i_sound_on = ImageTk.PhotoImage(i_sound_on)
-        i_sound_off = Image.open("Assets/mute.png")
+        i_sound_off = Image.open("Assets/buttons/mute.png")
         i_sound_off = i_sound_off.resize((i_sound_off.width * scaling_factor, i_sound_off.height * scaling_factor),
                                          resample=Image.NEAREST)
         self.i_sound_off = ImageTk.PhotoImage(i_sound_off)
@@ -126,6 +144,7 @@ class main_window(tk.Tk):
         self.updated_indicator = None
         self.last_direction = None
         self.previous_note = None
+        self.tune_level = None
 
         self.update_color()
 
@@ -147,7 +166,7 @@ class main_window(tk.Tk):
         if self.last_direction == None: return
 
         if self.last_direction == '✓':
-            self.Note_label.configure(fg="black")
+            self.Note_label.configure(fg=self.fg)
         else:
             self.updated_indicator.configure(image=self.i_empty)
 
@@ -187,40 +206,39 @@ class main_window(tk.Tk):
             self.updated_indicator = self.left_indicators[abs(tune_level - 3)]
             self.previous_note = None
         self.last_direction = tune_direction
+        self.tune_level = tune_level
 
     def update_color(self):
         if self.color_mode == 'light':
             self.color_mode_button.configure(image=self.color_mode_dark, bg=self.bg, activebackground=self.bg)
-            self['bg'] = self.bg
-            self.Note_label.configure(background=self.bg, foreground=self.fg)
-            self.freq_label.configure(background=self.bg, foreground=self.fg)
-
-            for i in self.left_indicators:
-                i.configure(bg=self.bg, fg=self.fg)
-
-            for i in self.right_indicators:
-                i.configure(bg=self.bg, fg=self.fg)
         else:
             self.color_mode_button.configure(image=self.color_mode_light, bg=self.bg, activebackground=self.bg)
-            self['bg'] = self.bg
-            self.Note_label.configure(background=self.bg, foreground=self.fg)
-            self.freq_label.configure(background=self.bg, foreground=self.fg)
 
-            for i in self.left_indicators:
-                i.configure(bg=self.bg, fg=self.fg)
+        self['bg'] = self.bg
+        self.Note_label.configure(background=self.bg, foreground=self.fg)
+        self.freq_label.configure(background=self.bg, foreground=self.fg)
 
-            for i in self.right_indicators:
-                i.configure(bg=self.bg, fg=self.fg)
+        self.sound_mute_b.configure(bg=self.bg, activebackground=self.bg)
+
+        for i in range(4):
+            self.left_indicators[i].configure(image=self.i_empty,bg=self.bg, fg=self.fg)
+            self.right_indicators[i].configure(image=self.i_empty,bg=self.bg, fg=self.fg)
 
     def switch_color_mode(self):
         if self.color_mode == 'light':
             self.color_mode = 'dark'
             self.bg = self.dark_color
             self.fg = self.light_color
+
+            self.indicator_img=self.indicator_img_d
+            self.i_empty = self.i_empty_d
         else:
             self.color_mode = 'light'
             self.bg = self.light_color
-            self.fg = self.dark_color
+            self.fg = 'black'
+
+            self.indicator_img=self.indicator_img_l
+            self.i_empty = self.i_empty_l
         self.update_color()
 
 
