@@ -144,7 +144,7 @@ class main_window(tk.Tk):
         self.updated_indicator = None
         self.last_direction = None
         self.previous_note = None
-        self.tune_level = None
+        self.last_tune_level = None
 
         self.update_color()
 
@@ -206,7 +206,7 @@ class main_window(tk.Tk):
             self.updated_indicator = self.left_indicators[abs(tune_level - 3)]
             self.previous_note = None
         self.last_direction = tune_direction
-        self.tune_level = tune_level
+        self.last_tune_level = tune_level
 
     def update_color(self):
         if self.color_mode == 'light':
@@ -215,7 +215,10 @@ class main_window(tk.Tk):
             self.color_mode_button.configure(image=self.color_mode_light, bg=self.bg, activebackground=self.bg)
 
         self['bg'] = self.bg
-        self.Note_label.configure(background=self.bg, foreground=self.fg)
+        if self.last_direction == '✓':
+            self.Note_label.configure(background=self.bg)
+        else :
+            self.Note_label.configure(background=self.bg,foreground=self.fg)
         self.freq_label.configure(background=self.bg, foreground=self.fg)
 
         self.sound_mute_b.configure(bg=self.bg, activebackground=self.bg)
@@ -223,6 +226,11 @@ class main_window(tk.Tk):
         for i in range(4):
             self.left_indicators[i].configure(image=self.i_empty,bg=self.bg, fg=self.fg)
             self.right_indicators[i].configure(image=self.i_empty,bg=self.bg, fg=self.fg)
+        
+        if self.last_direction == '↓':
+            self.right_indicators[self.last_tune_level].configure(image=self.indicator_img[self.last_tune_level])
+        elif self.last_direction == '↑':
+            self.left_indicators[abs(self.last_tune_level - 3)].configure(image=self.indicator_img[self.last_tune_level])
 
     def switch_color_mode(self):
         if self.color_mode == 'light':
