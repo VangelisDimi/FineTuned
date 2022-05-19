@@ -4,7 +4,7 @@ import winsound
 import pyglet
 
 from audio_read import read_real_time_audio
-from audio_utils import audio_fft, frequency_to_note,neighbour_note_frequency
+from audio_utils import audio_fft, frequency_to_note, neighbour_note_frequency
 
 pyglet.font.add_file('Assets/LcdSolid-VPzB.ttf')
 
@@ -15,6 +15,7 @@ class main_window(tk.Tk):
 
         self.title("PyTuner")
         self.iconbitmap("Assets/icon_128.ico")
+        self.color_mode = 'light'
         self.geometry("550x400")
         self.minsize(550, 400)
 
@@ -22,7 +23,6 @@ class main_window(tk.Tk):
         self.Note_label = tk.Label(self, text='*', font=("LCD Solid", 70, 'bold'), width=5)
         self.grid_columnconfigure(4, weight=6)
         self.Note_label.grid(row=0, column=4)
-
 
         # frequency display
         self.freq_label = tk.Label(self, text='* Hz ()', font=('LCD Solid', 25))
@@ -48,19 +48,27 @@ class main_window(tk.Tk):
             self.left_indicators.append(tk.Label(self, image=self.i_empty))
             self.grid_columnconfigure(i, weight=1)
             self.left_indicators[i].grid(row=0, column=i)
+
         # Right
         self.right_indicators = []
         for i in range(4):
-            self.right_indicators.append(tk.Label(self, image=self.i_empty))
+            self.right_indicators.append(
+                tk.Label(self, image=self.i_empty))
             self.grid_columnconfigure(i + 5, weight=1)
 
             self.right_indicators[i].grid(row=0, column=i + 5)
 
-
-        #Row configure
+        # Row configure
         for i in range(2):
             self.rowconfigure(i, weight=1)
 
+        self.color_mode_dark = tk.PhotoImage(file="Assets/buttons/color_mode_dark.png")
+        self.color_mode_light = tk.PhotoImage(file="Assets/buttons/color_mode_light.png")
+
+        self.color_mode_button = tk.Button(self, bd=0, image=self.color_mode_dark,
+                                           command=self.switch_color_mode)
+
+        self.color_mode_button.grid(row=3, columnspan=9)
 
         self.no_update_count = 0
         self.updated_indicator = None
@@ -91,21 +99,59 @@ class main_window(tk.Tk):
         self.freq_label.configure(
             text=(round(frequency, 1), "Hz", "({}{})".format(tune_direction, round(tune_amount, 2))))
 
+        if self.color_mode == 'light':
+            self.Note_label.configure(fg='#262b2f')
+            self.freq_label.configure(fg='#262b2f')
+        else:
+            self.Note_label.configure(fg='white')
+            self.freq_label.configure(fg='white')
+
+
         # Update indicators
         if tune_direction == '✓':
             self.Note_label.configure(fg="#00ff1b")
             if Note != self.previous_note:
                 winsound.PlaySound('Assets/tune_sound.wav', winsound.SND_FILENAME + winsound.SND_ASYNC)
-                self.previous_note=Note
+                self.previous_note = Note
         elif tune_direction == '↓':
             self.right_indicators[tune_level].configure(image=self.indicator_img[tune_level])
             self.updated_indicator = self.right_indicators[tune_level]
-            self.previous_note=None
+            self.previous_note = None
         elif tune_direction == '↑':
             self.left_indicators[abs(tune_level - 3)].configure(image=self.indicator_img[tune_level])
             self.updated_indicator = self.left_indicators[abs(tune_level - 3)]
-            self.previous_note=None
+            self.previous_note = None
         self.last_direction = tune_direction
+
+    def switch_color_mode(self):
+        light_color = 'white'
+        dark_color = '#262b2f'
+
+        if self.color_mode == 'light':
+            self.color_mode_button.configure(image=self.color_mode_light, bg=dark_color, activebackground=dark_color)
+            self.color_mode = 'dark'
+            self['bg'] = dark_color
+            self.Note_label.configure(background=dark_color, foreground=light_color)
+            self.freq_label.configure(background=dark_color, foreground=light_color)
+
+            for i in self.left_indicators:
+                i.configure(bg=dark_color, fg=light_color)
+
+            for i in self.right_indicators:
+                i.configure(bg=dark_color, fg=light_color)
+
+        else:
+            self.color_mode_button.configure(image=self.color_mode_dark, bg=light_color, activebackground=light_color)
+            self.color_mode = 'light'
+            self['bg'] = light_color
+            self.Note_label.configure(background=light_color, foreground=dark_color)
+            self.freq_label.configure(background=light_color, foreground=dark_color)
+
+            for i in self.left_indicators:
+                i.configure(bg=light_color, fg=dark_color)
+
+            for i in self.right_indicators:
+                i.configure(bg=light_color, fg=dark_color)
 
 
 def main_gui():
@@ -131,8 +177,8 @@ def main_gui():
 
             # Find tune level
             if tune_direction != '✓':
-                neighbor = neighbour_note_frequency(closest_frequency,loudest_frequency)
-                distance = abs(closest_frequency - neighbor)/2
+                neighbor = neighbour_note_frequency(closest_frequency, loudest_frequency)
+                distance = abs(closest_frequency - neighbor) / 2
 
                 if abs(loudest_frequency - closest_frequency) > 0.8 * distance:
                     tune_level = 3
