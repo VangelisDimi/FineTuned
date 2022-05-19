@@ -110,10 +110,10 @@ class main_window(tk.Tk):
         self.color_mode_light = tk.PhotoImage(file="Assets/buttons/color_mode_light.png")
         
         if self.color_mode == 'light':
-            self.color_mode_button = tk.Button(self, bd=0, image=self.color_mode_dark,
-                                            command=self.switch_color_mode)
+            self.color_mode_icon = self.color_mode_dark
         else:
-             self.color_mode_button = tk.Button(self, bd=0, image=self.color_mode_light,
+            self.color_mode_icon = self.color_mode_light
+        self.color_mode_button = tk.Button(self, bd=0, image=self.color_mode_icon,
                                             command=self.switch_color_mode)
         self.color_mode_button.grid(row=2, column=5, columnspan=4)
 
@@ -209,10 +209,7 @@ class main_window(tk.Tk):
         self.last_tune_level = tune_level
 
     def update_color(self):
-        if self.color_mode == 'light':
-            self.color_mode_button.configure(image=self.color_mode_dark, bg=self.bg, activebackground=self.bg)
-        else:
-            self.color_mode_button.configure(image=self.color_mode_light, bg=self.bg, activebackground=self.bg)
+        self.color_mode_button.configure(image=self.color_mode_icon, bg=self.bg, activebackground=self.bg)
 
         self['bg'] = self.bg
         if self.last_direction == '✓':
@@ -240,6 +237,8 @@ class main_window(tk.Tk):
 
             self.indicator_img=self.indicator_img_d
             self.i_empty = self.i_empty_d
+
+            self.color_mode_icon = self.color_mode_light
         else:
             self.color_mode = 'light'
             self.bg = self.light_color
@@ -247,6 +246,8 @@ class main_window(tk.Tk):
 
             self.indicator_img=self.indicator_img_l
             self.i_empty = self.i_empty_l
+
+            self.color_mode_icon = self.color_mode_dark
         self.update_color()
 
 
