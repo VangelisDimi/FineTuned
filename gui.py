@@ -2,6 +2,7 @@ import tkinter as tk
 from PIL import ImageTk, Image
 import winsound
 import pyglet
+from configparser import ConfigParser
 
 from audio_read import read_real_time_audio
 from audio_utils import audio_fft, frequency_to_note, neighbour_note_frequency
@@ -21,7 +22,7 @@ class main_window(tk.Tk):
 
         # Note Display
         self.Note_label = tk.Label(self, text='*', font=("LCD Solid", 70, 'bold'), width=5)
-        self.grid_columnconfigure(4, weight=6)
+        self.columnconfigure(4, weight=6)
         self.Note_label.grid(row=0, column=4)
 
         # frequency display
@@ -33,14 +34,18 @@ class main_window(tk.Tk):
         i_h = 24
         scaling_factor = 3
 
-        self.i_empty = ImageTk.PhotoImage(
-            Image.open("Assets/Indicators/indicator_empty.png").resize((i_w * scaling_factor, i_h * scaling_factor),
-                                                                       resample=Image.NEAREST))
+        i_empty = Image.open("Assets/Indicators/indicator_empty.png")
+        i_empty = i_empty.resize((i_empty.width * scaling_factor, i_empty.height * scaling_factor),
+                                 resample=Image.NEAREST)
+        self.i_empty = ImageTk.PhotoImage(i_empty)
+
         self.indicator_img = []
         for i in range(4):
-            self.indicator_img.append(
-                ImageTk.PhotoImage(Image.open("Assets/Indicators/indicator_{}.png".format(i)).resize(
-                    (i_w * scaling_factor, i_h * scaling_factor), resample=Image.NEAREST)))
+            indicator_img = Image.open("Assets/Indicators/indicator_{}.png".format(i))
+            indicator_img = indicator_img.resize(
+                (indicator_img.width * scaling_factor, indicator_img.height * scaling_factor),
+                resample=Image.NEAREST)
+            self.indicator_img.append(ImageTk.PhotoImage(indicator_img))
 
         # Left
         self.left_indicators = []
@@ -48,13 +53,11 @@ class main_window(tk.Tk):
             self.left_indicators.append(tk.Label(self, image=self.i_empty))
             self.grid_columnconfigure(i, weight=1)
             self.left_indicators[i].grid(row=0, column=i)
-
         # Right
         self.right_indicators = []
         for i in range(4):
-            self.right_indicators.append(
-                tk.Label(self, image=self.i_empty))
-            self.grid_columnconfigure(i + 5, weight=1)
+            self.right_indicators.append(tk.Label(self, image=self.i_empty))
+            self.columnconfigure(i + 5, weight=1)
 
             self.right_indicators[i].grid(row=0, column=i + 5)
 
@@ -62,18 +65,63 @@ class main_window(tk.Tk):
         for i in range(2):
             self.rowconfigure(i, weight=1)
 
+        self.settings_frame = tk.Frame(self)
+        self.settings_frame.grid(row=2, columnspan=9)
+
         self.color_mode_dark = tk.PhotoImage(file="Assets/buttons/color_mode_dark.png")
         self.color_mode_light = tk.PhotoImage(file="Assets/buttons/color_mode_light.png")
 
         self.color_mode_button = tk.Button(self, bd=0, image=self.color_mode_dark,
                                            command=self.switch_color_mode)
 
-        self.color_mode_button.grid(row=3, columnspan=9)
+        self.color_mode_button.grid(row=2, column=5, columnspan=4)
+
+        # App settings
+        self.config = ConfigParser()
+        try:
+            with open('settings.ini') as f:
+                self.config.read_file(f)
+        except:
+            self.config['sound'] = {'sound_on': 'True'}
+            with open('settings.ini', 'w') as configfile:
+                self.config.write(configfile)
+
+        self.config.read('setting.ini')
+        self.sound_on = self.config.getboolean('sound', 'sound_on')
+
+        # Sound control button
+        i_sound_on = Image.open("Assets/sound.png")
+        i_sound_on = i_sound_on.resize((i_sound_on.width * scaling_factor, i_sound_on.height * scaling_factor),
+                                       resample=Image.NEAREST)
+        self.i_sound_on = ImageTk.PhotoImage(i_sound_on)
+        i_sound_off = Image.open("Assets/mute.png")
+        i_sound_off = i_sound_off.resize((i_sound_off.width * scaling_factor, i_sound_off.height * scaling_factor),
+                                         resample=Image.NEAREST)
+        self.i_sound_off = ImageTk.PhotoImage(i_sound_off)
+
+        if self.sound_on:
+            self.sound_mute_b = tk.Button(image=self.i_sound_on, command=self.sound_button_pressed)
+        else:
+            self.sound_mute_b = tk.Button(image=self.i_sound_off, command=self.sound_button_pressed)
+        self.sound_mute_b.grid(row=2, column=0, columnspan=4)
 
         self.no_update_count = 0
         self.updated_indicator = None
         self.last_direction = None
         self.previous_note = None
+
+    def sound_button_pressed(self):
+        if self.sound_on:
+            self.sound_mute_b.configure(image=self.i_sound_off)
+        else:
+            self.sound_mute_b.configure(image=self.i_sound_on)
+        self.sound_on = not self.sound_on
+
+    def on_exit(self):
+        # Write settings to file
+        self.config['sound']['sound_on'] = str(self.sound_on)
+        with open('settings.ini', 'w') as configfile:
+            self.config.write(configfile)
 
     def clear_indicator(self):
         if self.last_direction == None: return
@@ -89,8 +137,12 @@ class main_window(tk.Tk):
     def clear_labels(self):
         # remove text from all labels
         self.clear_indicator()
-        self.Note_label.configure(text='*')
-        self.freq_label.configure(text='* Hz ()')
+        if self.color_mode == 'light':
+            self.Note_label.configure(text='*', fg='#262b2f')
+            self.freq_label.configure(text='* Hz ()', fg='#262b2f')
+        else:
+            self.Note_label.configure(text='*', fg='white')
+            self.freq_label.configure(text='* Hz ()', fg='white')
 
     def update_labels(self, Note, frequency, tune_direction, tune_level, tune_amount):
         # update all labels
@@ -106,12 +158,12 @@ class main_window(tk.Tk):
             self.Note_label.configure(fg='white')
             self.freq_label.configure(fg='white')
 
-
         # Update indicators
         if tune_direction == '✓':
             self.Note_label.configure(fg="#00ff1b")
             if Note != self.previous_note:
-                winsound.PlaySound('Assets/tune_sound.wav', winsound.SND_FILENAME + winsound.SND_ASYNC)
+                if self.sound_on:
+                    winsound.PlaySound('Assets/tune_sound.wav', winsound.SND_FILENAME + winsound.SND_ASYNC)
                 self.previous_note = Note
         elif tune_direction == '↓':
             self.right_indicators[tune_level].configure(image=self.indicator_img[tune_level])
@@ -203,3 +255,4 @@ def main_gui():
     update_labels()
     app.mainloop()
     audio_generator.close()
+    app.on_exit()
