@@ -78,7 +78,7 @@ class main_window(tk.Tk):
         self.left_indicators = []
         for i in range(4):
             self.left_indicators.append(tk.Label(self, image=self.i_empty))
-            self.grid_columnconfigure(i, weight=1)
+            self.columnconfigure(i, weight=1)
             self.left_indicators[i].grid(row=0, column=i)
         # Right
         self.right_indicators = []
@@ -91,10 +91,6 @@ class main_window(tk.Tk):
         # Row configure
         for i in range(3):
             self.rowconfigure(i, weight=1)
-
-        #Settings frame
-        self.settings_frame = tk.Frame(self)
-        self.settings_frame.grid(row=2, columnspan=9)
 
         #Color mode button
         self.color_mode_dark = tk.PhotoImage(file="Assets/buttons/color_mode_dark.png")
@@ -133,6 +129,12 @@ class main_window(tk.Tk):
         else:
             self.sound_mute_b = tk.Button(image=self.i_sound_off,bd=0, command=self.sound_button_pressed)
         self.sound_mute_b.grid(row=2, column=0, columnspan=4)
+
+        # A4 frequency tuning
+        self.A4_freq = tk.StringVar(self)
+        self.A4_freq.set('440')
+        self.A4_freq_spinbox = tk.Spinbox(self,font=("LCD Solid", 20),from_=300,to=500,textvariable=self.A4_freq)
+        self.A4_freq_spinbox.grid(row=2,column=4)
 
         self.no_update_count = 0
         self.updated_indicator = None
@@ -261,9 +263,10 @@ def main_gui():
     audio_generator = read_real_time_audio()
 
     def update_labels():
+        f_0 = int(app.A4_freq.get())
         sample_rate, signal = next(audio_generator)
         _, _, _, loudest_frequency, loudest_frequency_amplitude = audio_fft(signal, sample_rate)
-        closest_frequency, closest_note = frequency_to_note(loudest_frequency, loudest_frequency_amplitude)
+        closest_frequency, closest_note = frequency_to_note(loudest_frequency, loudest_frequency_amplitude , f_0)
         tune_direction = None
         tune_level = None
 
@@ -279,7 +282,7 @@ def main_gui():
 
             # Find tune level
             if tune_direction != '✓':
-                neighbor = neighbour_note_frequency(closest_frequency, loudest_frequency)
+                neighbor = neighbour_note_frequency(closest_frequency, loudest_frequency , f_0)
                 distance = abs(closest_frequency - neighbor) / 2
 
                 if abs(loudest_frequency - closest_frequency) > 0.8 * distance:
