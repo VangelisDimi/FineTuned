@@ -1,3 +1,4 @@
+from multiprocessing.connection import wait
 import tkinter as tk
 from PIL import ImageTk, Image
 import winsound
@@ -10,10 +11,17 @@ from audio_utils import audio_fft, frequency_to_note, neighbour_note_frequency
 pyglet.font.add_file('Assets/LcdSolid-VPzB.ttf')
 
 
-def open_image(path,scaling_factor=1):
-    image = Image.open(path)
-    image = image.resize((image.width * scaling_factor, image.height * scaling_factor),
-                                 resample=Image.NEAREST)
+def open_image(path,scaling_factor=1,scaling_type=None):
+    if scaling_type == None:
+        image = ImageTk.PhotoImage(file=path)
+    elif scaling_type == 'zoom':
+        image = Image.open(path)
+        image = image.resize((image.width * scaling_factor, image.height * scaling_factor),
+                                    resample=Image.NEAREST)
+        image = ImageTk.PhotoImage(image)
+    elif scaling_type == 'unzoom':
+        image = ImageTk.PhotoImage(file=path)
+        image = image._PhotoImage__photo.subsample(scaling_factor)
     return image
 
 
@@ -39,6 +47,7 @@ class main_window(tk.Tk):
         except:
             self.config['sound'] = {'sound_on': 'True'}
             self.config['color'] = {'color_mode' : 'light'}
+            self.config['a4_tuning'] = {'frequency' : '440'}
             with open('settings.ini', 'w') as configfile:
                 self.config.write(configfile)
 
@@ -58,14 +67,14 @@ class main_window(tk.Tk):
         # Indicators
         scaling_factor = 3
 
-        self.i_empty_l = ImageTk.PhotoImage(open_image("Assets/Indicators/light/indicator_empty.png",scaling_factor))
-        self.i_empty_d = ImageTk.PhotoImage(open_image("Assets/Indicators/dark/indicator_empty.png",scaling_factor))
+        self.i_empty_l = open_image("Assets/Indicators/light/indicator_empty.png",scaling_factor,'zoom')
+        self.i_empty_d = open_image("Assets/Indicators/dark/indicator_empty.png",scaling_factor,'zoom')
 
         self.indicator_img_l = []
         self.indicator_img_d = []
         for i in range(4):
-            self.indicator_img_l.append(ImageTk.PhotoImage(open_image("Assets/Indicators/light/indicator_{}.png".format(i),scaling_factor)))
-            self.indicator_img_d.append(ImageTk.PhotoImage(open_image("Assets/Indicators/dark/indicator_{}.png".format(i),scaling_factor)))
+            self.indicator_img_l.append(open_image("Assets/Indicators/light/indicator_{}.png".format(i),scaling_factor,'zoom'))
+            self.indicator_img_d.append(open_image("Assets/Indicators/dark/indicator_{}.png".format(i),scaling_factor,'zoom'))
 
         if self.color_mode == 'light':
             self.indicator_img=self.indicator_img_l
@@ -93,8 +102,8 @@ class main_window(tk.Tk):
             self.rowconfigure(i, weight=1)
 
         #Color mode button
-        self.color_mode_dark = tk.PhotoImage(file="Assets/buttons/color_mode_dark.png")
-        self.color_mode_light = tk.PhotoImage(file="Assets/buttons/color_mode_light.png")
+        self.color_mode_dark = open_image("Assets/buttons/color_mode_dark.png")
+        self.color_mode_light = open_image("Assets/buttons/color_mode_light.png")
         
         if self.color_mode == 'light':
             self.color_mode_icon = self.color_mode_dark
@@ -112,10 +121,10 @@ class main_window(tk.Tk):
             self.fg = self.light_color
 
         # Sound control button
-        self.i_sound_on_l = ImageTk.PhotoImage(open_image("Assets/buttons/sound_light.png",scaling_factor))
-        self.i_sound_off_l = ImageTk.PhotoImage(open_image("Assets/buttons/mute_light.png",scaling_factor))
-        self.i_sound_on_d = ImageTk.PhotoImage(open_image("Assets/buttons/sound_dark.png",scaling_factor))
-        self.i_sound_off_d = ImageTk.PhotoImage(open_image("Assets/buttons/mute_dark.png",scaling_factor))
+        self.i_sound_on_l = open_image("Assets/buttons/sound_light.png",scaling_factor,'zoom')
+        self.i_sound_off_l = open_image("Assets/buttons/mute_light.png",scaling_factor,'zoom')
+        self.i_sound_on_d = open_image("Assets/buttons/sound_dark.png",scaling_factor,'zoom')
+        self.i_sound_off_d = open_image("Assets/buttons/mute_dark.png",scaling_factor,'zoom')
 
         if self.color_mode == 'light':
             self.i_sound_on = self.i_sound_on_l
@@ -131,10 +140,29 @@ class main_window(tk.Tk):
         self.sound_mute_b.grid(row=2, column=0, columnspan=4)
 
         # A4 frequency tuning
-        self.A4_freq = tk.StringVar(self)
-        self.A4_freq.set('440')
-        self.A4_freq_spinbox = tk.Spinbox(self,font=("LCD Solid", 20),from_=300,to=500,textvariable=self.A4_freq)
-        self.A4_freq_spinbox.grid(row=2,column=4)
+        self.A4_freq = tk.StringVar()
+        self.A4_freq.set(self.config['a4_tuning']['frequency'])
+
+        self.A4_freq_frame = tk.Frame()
+        for i in range(4):
+            self.A4_freq_frame.columnconfigure(i, weight=1)
+        self.A4_label_1 = tk.Label(self.A4_freq_frame,text="A4=",font=("LCD Solid", 20))
+        self.A4_label_1.grid(row=0,column=0)
+        self.A4_freq_spinbox = tk.Spinbox(self.A4_freq_frame,font=("LCD Solid", 20),from_=300,to=500,textvariable=self.A4_freq, width=4)
+        self.A4_freq_spinbox.grid(row=0,column=1)
+        self.A4_label_2 = tk.Label(self.A4_freq_frame,text="Hz",font=("LCD Solid", 20),padx=10)
+        self.A4_label_2.grid(row=0,column=2)
+
+        self.i_reset_l = open_image("Assets/buttons/reset_icon_light.png",3,'unzoom')
+        self.i_reset_d = open_image("Assets/buttons/reset_icon_dark.png",3,'unzoom')
+        if self.color_mode == 'light':
+            self.i_reset = self.i_reset_l
+        else:
+            self.i_reset = self.i_reset_d
+        self.A4_reset_b = tk.Button(self.A4_freq_frame,image=self.i_reset,bd=0,command=self.reset_a4_frequency)
+        self.A4_reset_b.grid(row=0,column=3)
+
+        self.A4_freq_frame.grid(row=2,column=4)
 
         self.no_update_count = 0
         self.updated_indicator = None
@@ -143,6 +171,9 @@ class main_window(tk.Tk):
         self.last_tune_level = None
 
         self.update_color()
+
+    def reset_a4_frequency(self):
+        self.A4_freq.set('440')
 
     def sound_button_pressed(self):
         if self.sound_on:
@@ -155,6 +186,7 @@ class main_window(tk.Tk):
         # Write settings to file
         self.config['sound']['sound_on'] = str(self.sound_on)
         self.config['color']['color_mode'] = self.color_mode
+        self.config['a4_tuning']['frequency'] = self.A4_freq.get()
         with open('settings.ini', 'w') as configfile:
             self.config.write(configfile)
 
@@ -229,6 +261,11 @@ class main_window(tk.Tk):
         elif self.last_direction == '↑':
             self.left_indicators[abs(self.last_tune_level - 3)].configure(image=self.indicator_img[self.last_tune_level])
 
+        self.A4_freq_frame['bg'] = self.bg
+        self.A4_label_1.configure(background=self.bg,foreground=self.fg)
+        self.A4_label_2.configure(background=self.bg,foreground=self.fg)
+        self.A4_reset_b.configure(image=self.i_reset,background=self.bg,activebackground=self.bg)
+
     def switch_color_mode(self):
         if self.color_mode == 'light':
             self.color_mode = 'dark'
@@ -242,6 +279,8 @@ class main_window(tk.Tk):
 
             self.i_sound_on = self.i_sound_on_d
             self.i_sound_off = self.i_sound_off_d
+
+            self.i_reset = self.i_reset_d
         else:
             self.color_mode = 'light'
             self.bg = self.light_color
@@ -254,6 +293,8 @@ class main_window(tk.Tk):
 
             self.i_sound_on = self.i_sound_on_l
             self.i_sound_off = self.i_sound_off_l
+
+            self.i_reset = self.i_reset_l
 
         self.update_color()
 
