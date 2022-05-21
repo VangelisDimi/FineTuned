@@ -1,4 +1,3 @@
-from multiprocessing.connection import wait
 import tkinter as tk
 from PIL import ImageTk, Image
 import winsound
@@ -30,7 +29,7 @@ class main_window(tk.Tk):
         super().__init__()
 
         self.title("PyTuner")
-        self.iconbitmap("Assets/icon_128.ico")
+        self.iconbitmap("Assets/icon_32.ico")
         self.geometry("550x400")
         self.minsize(550, 400)
 
