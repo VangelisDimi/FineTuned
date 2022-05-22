@@ -19,6 +19,12 @@ def audio_fft(signal, sample_rate, samples=None):
     yf = fft(signal)
     xf = fftfreq(samples, 1 / sample_rate)[:samples // 2]
 
+    # HPS
+    yf_original = yf.copy()
+    hps_steps = 5
+    for i in range(2, hps_steps, 1):
+        yf[:int(np.ceil(len(yf) / i))] *= yf_original[::i]
+
     frequencies = dict(zip(xf, samples * np.abs(yf[0:samples // 2])))
     loudest_frequency = max(frequencies, key=frequencies.get)
     return frequencies, xf, yf, loudest_frequency, frequencies[loudest_frequency]
@@ -63,6 +69,7 @@ def frequency_to_note(input_frequency, input_frequency_amplitude, f_0=440.0):
 
     closest_frequency = None
     closest_note = None
+    octave = None
 
     a = 2 ** (1 / 12)
     for n in range(-37, 23):
@@ -75,8 +82,9 @@ def frequency_to_note(input_frequency, input_frequency_amplitude, f_0=440.0):
                 abs(input_frequency - frequency) < abs(input_frequency - closest_frequency))):
             closest_frequency = frequency
             closest_note = notes[(n + 1) % 12]
+            octave = math.floor((n + 10) / 12) + 4
 
-    return closest_frequency, closest_note
+    return closest_frequency, closest_note + str(octave)
 
 
 def neighbour_note_frequency(note_frequency, frequency, f_0=440.0):
