@@ -72,14 +72,10 @@ def frequency_to_note(input_frequency, input_frequency_amplitude, f_0=440.0):
     octave = None
 
     a = 2 ** (1 / 12)
-    for n in range(-37, 23):
+    for n in range(-50, 50):
         frequency = f_0 * a ** (n + 1)  # source: https://pages.mtu.edu/~suits/NoteFreqCalcs.html
 
-        if closest_frequency is not None and abs(frequency - input_frequency) > closest_frequency:
-            break
-
-        if abs(input_frequency - frequency) < frequency_threshold and (closest_frequency is None or (
-                abs(input_frequency - frequency) < abs(input_frequency - closest_frequency))):
+        if closest_frequency is None or abs(input_frequency - frequency) < abs(input_frequency - closest_frequency):
             closest_frequency = frequency
             closest_note = notes[(n + 1) % 12]
             octave = math.floor((n + 10) / 12) + 4
