@@ -10,17 +10,19 @@ from audio_utils import audio_fft, frequency_to_note, neighbour_note_frequency
 pyglet.font.add_file('Assets/LcdSolid-VPzB.ttf')
 
 
-def open_image(path,scaling_factor=1,scaling_type=None):
-    if scaling_type == None:
+def open_image(path,scaling_factor=1,scaling_method=None,resample=None):
+    if scaling_method == None :
         image = ImageTk.PhotoImage(file=path)
-    elif scaling_type == 'zoom':
+    if scaling_method == 'resize':
         image = Image.open(path)
-        image = image.resize((image.width * scaling_factor, image.height * scaling_factor),
-                                    resample=Image.NEAREST)
+        image = image.resize((int(image.width * scaling_factor), int(image.height * scaling_factor)),
+                                    resample)
         image = ImageTk.PhotoImage(image)
-    elif scaling_type == 'unzoom':
+    elif scaling_method == 'subsample':
         image = ImageTk.PhotoImage(file=path)
-        image = image._PhotoImage__photo.subsample(scaling_factor)
+        image = image._PhotoImage__photo.subsample(int(scaling_factor))
+    else:
+        raise ValueError('Invalid scaling_method.')
     return image
 
 
@@ -66,14 +68,14 @@ class main_window(tk.Tk):
         # Indicators
         scaling_factor = 3
 
-        self.i_empty_l = open_image("Assets/Indicators/light/indicator_empty.png",scaling_factor,'zoom')
-        self.i_empty_d = open_image("Assets/Indicators/dark/indicator_empty.png",scaling_factor,'zoom')
+        self.i_empty_l = open_image("Assets/Indicators/light/indicator_empty.png",scaling_factor,'resize',Image.NEAREST)
+        self.i_empty_d = open_image("Assets/Indicators/dark/indicator_empty.png",scaling_factor,'resize',Image.NEAREST)
 
         self.indicator_img_l = []
         self.indicator_img_d = []
         for i in range(4):
-            self.indicator_img_l.append(open_image("Assets/Indicators/light/indicator_{}.png".format(i),scaling_factor,'zoom'))
-            self.indicator_img_d.append(open_image("Assets/Indicators/dark/indicator_{}.png".format(i),scaling_factor,'zoom'))
+            self.indicator_img_l.append(open_image("Assets/Indicators/light/indicator_{}.png".format(i),scaling_factor,'resize',Image.NEAREST))
+            self.indicator_img_d.append(open_image("Assets/Indicators/dark/indicator_{}.png".format(i),scaling_factor,'resize',Image.NEAREST))
 
         if self.color_mode == 'light':
             self.indicator_img=self.indicator_img_l
@@ -101,8 +103,8 @@ class main_window(tk.Tk):
             self.rowconfigure(i, weight=1)
 
         #Color mode button
-        self.color_mode_dark = open_image("Assets/buttons/color_mode_dark.png")
-        self.color_mode_light = open_image("Assets/buttons/color_mode_light.png")
+        self.color_mode_dark = open_image("Assets/buttons/color_mode_dark.png",0.9,'resize')
+        self.color_mode_light = open_image("Assets/buttons/color_mode_light.png",0.9,'resize')
         
         if self.color_mode == 'light':
             self.color_mode_icon = self.color_mode_dark
@@ -120,10 +122,10 @@ class main_window(tk.Tk):
             self.fg = self.light_color
 
         # Sound control button
-        self.i_sound_on_l = open_image("Assets/buttons/sound_light.png",scaling_factor,'zoom')
-        self.i_sound_off_l = open_image("Assets/buttons/mute_light.png",scaling_factor,'zoom')
-        self.i_sound_on_d = open_image("Assets/buttons/sound_dark.png",scaling_factor,'zoom')
-        self.i_sound_off_d = open_image("Assets/buttons/mute_dark.png",scaling_factor,'zoom')
+        self.i_sound_on_l = open_image("Assets/buttons/sound_light.png",scaling_factor,'resize',Image.NEAREST)
+        self.i_sound_off_l = open_image("Assets/buttons/mute_light.png",scaling_factor,'resize',Image.NEAREST)
+        self.i_sound_on_d = open_image("Assets/buttons/sound_dark.png",scaling_factor,'resize',Image.NEAREST)
+        self.i_sound_off_d = open_image("Assets/buttons/mute_dark.png",scaling_factor,'resize',Image.NEAREST)
 
         if self.color_mode == 'light':
             self.i_sound_on = self.i_sound_on_l
@@ -152,8 +154,8 @@ class main_window(tk.Tk):
         self.A4_label_2 = tk.Label(self.A4_freq_frame,text="Hz",font=("LCD Solid", 20),padx=10)
         self.A4_label_2.grid(row=0,column=2)
 
-        self.i_reset_l = open_image("Assets/buttons/reset_icon_light.png",3,'unzoom')
-        self.i_reset_d = open_image("Assets/buttons/reset_icon_dark.png",3,'unzoom')
+        self.i_reset_l = open_image("Assets/buttons/reset_icon_light.png",3,'subsample')
+        self.i_reset_d = open_image("Assets/buttons/reset_icon_dark.png",3,'subsample')
         if self.color_mode == 'light':
             self.i_reset = self.i_reset_l
         else:
@@ -309,7 +311,7 @@ def main_gui():
         closest_frequency, closest_note = frequency_to_note(loudest_frequency, loudest_frequency_amplitude , f_0)
         tune_direction = None
         tune_level = None
-
+        
         if closest_frequency is not None and closest_note is not None:
             # Find tune direction
             if abs(loudest_frequency - closest_frequency) > 0.5:
