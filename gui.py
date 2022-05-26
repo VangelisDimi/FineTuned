@@ -30,7 +30,7 @@ class main_window(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.title("PyTuner")
+        self.title("FineTuned")
         self.iconbitmap("Assets/icon_32.ico")
         self.geometry("550x400")
         self.minsize(550, 400)
