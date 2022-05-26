@@ -1,2 +1,2 @@
-# PyTuner
-A simple guitar tuner made with python
+# FineTuned
+A Chromatic Instrument Tuner in Python
