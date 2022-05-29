@@ -2,7 +2,7 @@ from scipy.io import wavfile
 import matplotlib.pyplot as plt
 import numpy as np
 import pyaudio
-from audio_utils import audio_fft, frequency_to_note
+from audio_utils import audio_fft
 
 
 def read_audio_file(file_name):
@@ -13,6 +13,7 @@ def read_audio_file(file_name):
     :return: a tuple with the sample rate, the left channel and the right channel audio signal in numpy array format
     """
 
+    # only Wave format supported
     if file_name.endswith('.wav'):
         sample_rate, signal = wavfile.read(file_name)
         left_channel_signal = signal[:, 0]
@@ -51,7 +52,7 @@ def read_real_time_audio():
 
 def plot_audio_signal(signal, sample_rate, samples=None, plot_max_samples=5000, plot_max_freq=1000):
     """
-    Plots an audio signal in audio and frequency domain
+    Plots an audio signal in audio and frequency domain (used for debugging)
 
     :param signal: the audio signal in numpy array format
     :param sample_rate: the sample rate of the audio signal
@@ -59,6 +60,10 @@ def plot_audio_signal(signal, sample_rate, samples=None, plot_max_samples=5000, 
     :param plot_max_samples: the amount of samples to plot
     :param plot_max_freq: the maximum frequency in the frequency spectrum plot
     """
+
+    if samples is None:
+        samples = len(signal)
+
     fig, axes = plt.subplots(nrows=2, ncols=1, num='Audio Signal Plot')
 
     # Time Domain Plot
@@ -72,9 +77,6 @@ def plot_audio_signal(signal, sample_rate, samples=None, plot_max_samples=5000, 
     # Frequency Domain Plot
 
     # Fast Fourier Transform
-    if samples is None:
-        samples = len(signal)
-
     frequencies, xf, yf, loudest_frequency, _ = audio_fft(signal, sample_rate, samples)
 
     axes[1].set_title(
