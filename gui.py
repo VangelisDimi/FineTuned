@@ -30,36 +30,50 @@ class main_window(tk.Tk):
     def __init__(self):
         super().__init__()
 
+        # App settings
+        try:
+            self.config = ConfigParser()
+            with open('settings.ini') as f:
+                self.config.read_file(f)
+            if not self.config.has_option('sound', 'sound_on') or \
+                not self.config.has_option('color', 'color_mode') or \
+                not self.config.has_option('a4_tuning', 'frequency') or \
+                not self.config.has_option('window','geometry') :
+                raise ValueError('Configuration file has missing options.')
+        except:
+            self.config = ConfigParser()
+            self.config['sound'] = {'sound_on': 'True'}
+            self.config['color'] = {'color_mode' : 'light'}
+            self.config['a4_tuning'] = {'frequency' : '440'}
+            self.config['window'] = {'geometry' : '550x400+0+0'}
+            with open('settings.ini', 'w') as configfile:
+                self.config.write(configfile)
+        self.config.read('setting.ini')
+        self.sound_on = self.config.getboolean('sound', 'sound_on')
+        self.color_mode = self.config['color']['color_mode']
+
+        #Window options
         self.title("FineTuned")
         self.iconbitmap("Assets/icon_32.ico")
-        self.geometry("550x400")
-        self.minsize(550, 400)
+        self.geometry(self.config['window']['geometry'])
+        self.minsize(470, 200)
 
         self.light_color = 'white'
         self.dark_color = '#262b2f'
         self.bg = None
         self.fg = None
 
-        # App settings
-        self.config = ConfigParser()
-        try:
-            with open('settings.ini') as f:
-                self.config.read_file(f)
-        except:
-            self.config['sound'] = {'sound_on': 'True'}
-            self.config['color'] = {'color_mode' : 'light'}
-            self.config['a4_tuning'] = {'frequency' : '440'}
-            with open('settings.ini', 'w') as configfile:
-                self.config.write(configfile)
+        # Note Display frame
+        self.Note_frame = tk.Frame(self)
+        for i in range(2):
+            self.Note_frame.columnconfigure(i, weight=1)
 
-        self.config.read('setting.ini')
-        self.sound_on = self.config.getboolean('sound', 'sound_on')
-        self.color_mode = self.config['color']['color_mode']
-
-        # Note Display
-        self.Note_label = tk.Label(self, text='*', font=("LCD Solid", 70, 'bold'), width=5)
+        self.Note_label = tk.Label(self.Note_frame, text='*', font=("LCD Solid", 70, 'bold'), width=2)
+        self.Note_label.grid(row=0,column=0)
+        self.octave_label = tk.Label(self.Note_frame, text='*', font=("LCD Solid", 45, 'bold'), width=2,padx=1)
+        self.octave_label.grid(row=0,column=1)
         self.columnconfigure(4, weight=6)
-        self.Note_label.grid(row=0, column=4)
+        self.Note_frame.grid(row=0, column=4)
 
         # Frequency display
         self.freq_label = tk.Label(self, text='* Hz ()', font=('LCD Solid', 25))
@@ -165,12 +179,14 @@ class main_window(tk.Tk):
 
         self.A4_freq_frame.grid(row=2,column=4)
 
+        #Variables for gui updates        
         self.no_update_count = 0
         self.updated_indicator = None
         self.last_direction = None
         self.previous_note = None
         self.last_tune_level = None
 
+        self.protocol("WM_DELETE_WINDOW",self.on_exit)
         self.update_color()
 
     def reset_a4_frequency(self):
@@ -188,8 +204,11 @@ class main_window(tk.Tk):
         self.config['sound']['sound_on'] = str(self.sound_on)
         self.config['color']['color_mode'] = self.color_mode
         self.config['a4_tuning']['frequency'] = self.A4_freq.get()
+        self.config['window']['geometry'] = self.geometry()
         with open('settings.ini', 'w') as configfile:
             self.config.write(configfile)
+        #Close window
+        self.destroy()
 
     def clear_indicator(self):
         if self.last_direction == None: return
@@ -206,31 +225,38 @@ class main_window(tk.Tk):
         # remove text from all labels
         self.clear_indicator()
         self.Note_label.configure(text='*', fg=self.fg)
+        self.octave_label.configure(text='*',fg=self.fg)
         self.freq_label.configure(text='* Hz ()', fg=self.fg)
 
-    def update_labels(self, Note, frequency, tune_direction, tune_level, tune_amount):
+    def update_labels(self, Note, octave, frequency, tune_direction, tune_level, tune_amount):
         # update all labels
         self.clear_indicator()
         self.Note_label.configure(text=Note)
+        self.octave_label.configure(text=octave)
         self.freq_label.configure(
             text=(round(frequency, 1), "Hz", "({}{})".format(tune_direction, round(tune_amount, 2))))
-
-        
-        self.Note_label.configure(fg=self.fg)
-        self.freq_label.configure(fg=self.fg)
 
         # Update indicators
         if tune_direction == '✓':
             self.Note_label.configure(fg="#00ff1b")
+            self.octave_label.configure(fg="#00ff1b")
             if Note != self.previous_note:
                 if self.sound_on:
                     winsound.PlaySound('Assets/tune_sound.wav', winsound.SND_FILENAME + winsound.SND_ASYNC)
                 self.previous_note = Note
         elif tune_direction == '↓':
+            self.Note_label.configure(fg=self.fg)
+            self.octave_label.configure(fg=self.fg)
+            self.freq_label.configure(fg=self.fg)
+
             self.right_indicators[tune_level].configure(image=self.indicator_img[tune_level])
             self.updated_indicator = self.right_indicators[tune_level]
             self.previous_note = None
         elif tune_direction == '↑':
+            self.Note_label.configure(fg=self.fg)
+            self.octave_label.configure(fg=self.fg)
+            self.freq_label.configure(fg=self.fg)
+
             self.left_indicators[abs(tune_level - 3)].configure(image=self.indicator_img[tune_level])
             self.updated_indicator = self.left_indicators[abs(tune_level - 3)]
             self.previous_note = None
@@ -243,9 +269,12 @@ class main_window(tk.Tk):
         self['bg'] = self.bg
         if self.last_direction == '✓':
             self.Note_label.configure(background=self.bg)
+            self.octave_label.configure(background=self.bg)
         else :
             self.Note_label.configure(background=self.bg,foreground=self.fg)
+            self.octave_label.configure(background=self.bg,foreground=self.fg)
         self.freq_label.configure(background=self.bg, foreground=self.fg)
+        self.Note_frame.configure(background=self.bg)
 
         self.sound_mute_b.configure(bg=self.bg, activebackground=self.bg)
         if self.sound_on:
@@ -308,7 +337,7 @@ def main_gui():
         f_0 = int(app.A4_freq.get())
         sample_rate, signal = next(audio_generator)
         _, _, _, loudest_frequency, loudest_frequency_amplitude = audio_fft(signal, sample_rate)
-        closest_frequency, closest_note = frequency_to_note(loudest_frequency, loudest_frequency_amplitude , f_0)
+        closest_frequency, closest_note, octave = frequency_to_note(loudest_frequency, loudest_frequency_amplitude , f_0)
         tune_direction = None
         tune_level = None
         
@@ -336,7 +365,7 @@ def main_gui():
                 elif abs(loudest_frequency - closest_frequency) > 0.5:
                     tune_level = 0
 
-            app.update_labels(closest_note, loudest_frequency, tune_direction, tune_level,
+            app.update_labels(closest_note, octave, loudest_frequency, tune_direction, tune_level,
                               abs(loudest_frequency - closest_frequency))
             app.no_update_count = 0
         else:
@@ -350,4 +379,3 @@ def main_gui():
     update_labels()
     app.mainloop()
     audio_generator.close()
-    app.on_exit()

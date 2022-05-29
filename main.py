@@ -8,7 +8,7 @@ def main_headless():
 
     for sample_rate, signal in audio_generator:
         _, _, _, loudest_frequency, loudest_frequency_amplitude = audio_fft(signal, sample_rate)
-        closest_frequency, closest_note = frequency_to_note(loudest_frequency, loudest_frequency_amplitude)
+        closest_frequency, closest_note, octave = frequency_to_note(loudest_frequency, loudest_frequency_amplitude)
         tune_direction = None
 
         if closest_frequency is not None and closest_note is not None:
@@ -21,7 +21,7 @@ def main_headless():
                 tune_direction = '✓'
 
             print(
-                str(loudest_frequency) + 'Hz (' + str(closest_note) + ') ' + tune_direction)
+                str(loudest_frequency) + 'Hz (' + closest_note + ' ' + octave + ') ' + tune_direction)
     
     audio_generator.close()
 

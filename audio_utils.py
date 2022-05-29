@@ -65,7 +65,7 @@ def frequency_to_note(input_frequency, input_frequency_amplitude, f_0=440.0):
 
     if input_frequency <= min_frequency or input_frequency >= max_frequency or \
             input_frequency_amplitude < amplitude_threshold:
-        return None, None
+        return None, None, None
 
     closest_frequency = None
     closest_note = None
@@ -80,7 +80,7 @@ def frequency_to_note(input_frequency, input_frequency_amplitude, f_0=440.0):
             closest_note = notes[(n + 1) % 12]
             octave = math.floor((n + 10) / 12) + 4
 
-    return closest_frequency, closest_note + str(octave)
+    return closest_frequency, closest_note, str(octave)
 
 
 def neighbour_note_frequency(note_frequency, frequency, f_0=440.0):
