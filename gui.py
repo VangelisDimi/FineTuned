@@ -38,24 +38,28 @@ class main_window(tk.Tk):
             if not self.config.has_option('sound', 'sound_on') or \
                 not self.config.has_option('color', 'color_mode') or \
                 not self.config.has_option('a4_tuning', 'frequency') or \
-                not self.config.has_option('window','geometry') :
+                not self.config.has_option('window','geometry') or \
+                not self.config.has_option('window','zoomed') :
                 raise ValueError('Configuration file has missing options.')
         except:
             self.config = ConfigParser()
             self.config['sound'] = {'sound_on': 'True'}
             self.config['color'] = {'color_mode' : 'light'}
             self.config['a4_tuning'] = {'frequency' : '440'}
-            self.config['window'] = {'geometry' : '550x400+0+0'}
+            self.config['window'] = {'geometry' : '550x400',
+                                     'zoomed' : 'False'}
             with open('settings.ini', 'w') as configfile:
                 self.config.write(configfile)
         self.config.read('setting.ini')
         self.sound_on = self.config.getboolean('sound', 'sound_on')
         self.color_mode = self.config['color']['color_mode']
+        self.geometry(self.config['window']['geometry'])
+        if self.config.getboolean('window', 'zoomed') == True :
+            self.state("zoomed")
 
         #Window options
         self.title("FineTuned")
         self.iconbitmap("Assets/icon_32.ico")
-        self.geometry(self.config['window']['geometry'])
         self.minsize(470, 200)
 
         self.light_color = 'white'
@@ -186,8 +190,16 @@ class main_window(tk.Tk):
         self.previous_note = None
         self.last_tune_level = None
 
+        self.last_state = self.state()
+
         self.protocol("WM_DELETE_WINDOW",self.on_exit)
+        self.bind( "<Configure>", self.on_config)
         self.update_color()
+    
+    def on_config(self,event):
+        #Used to restore window if it's closed while minimized
+        if self.state() == 'zoomed' or self.state() == 'normal':
+            self.last_state = self.state()
 
     def reset_a4_frequency(self):
         self.A4_freq.set('440')
@@ -205,6 +217,14 @@ class main_window(tk.Tk):
         self.config['color']['color_mode'] = self.color_mode
         self.config['a4_tuning']['frequency'] = self.A4_freq.get()
         self.config['window']['geometry'] = self.geometry()
+        if self.state() == 'zoomed':
+            self.config['window']['zoomed'] = 'True'
+        elif self.state() == 'normal':
+            self.config['window']['zoomed'] = 'False'
+        elif self.state() == 'iconic':
+            self.config['window']['zoomed'] = 'False'
+            if self.last_state == 'zoomed':
+                self.config['window']['geometry'] = '550x400'
         with open('settings.ini', 'w') as configfile:
             self.config.write(configfile)
         #Close window
