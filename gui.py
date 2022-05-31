@@ -167,7 +167,7 @@ class main_window(tk.Tk):
             self.A4_freq_frame.columnconfigure(i, weight=1)
         self.A4_label_1 = tk.Label(self.A4_freq_frame,text="A4=",font=("LCD Solid", 20))
         self.A4_label_1.grid(row=0,column=0)
-        self.A4_freq_spinbox = tk.Spinbox(self.A4_freq_frame,font=("LCD Solid", 20),from_=300,to=500,textvariable=self.A4_freq, width=4)
+        self.A4_freq_spinbox = tk.Spinbox(self.A4_freq_frame,font=("LCD Solid", 20),from_=300,to=500,textvariable=self.A4_freq, width=4,state='readonly')
         self.A4_freq_spinbox.grid(row=0,column=1)
         self.A4_label_2 = tk.Label(self.A4_freq_frame,text="Hz",font=("LCD Solid", 20),padx=10)
         self.A4_label_2.grid(row=0,column=2)
