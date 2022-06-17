@@ -24,7 +24,7 @@ def read_audio_file(file_name):
         raise Exception('Unsupported Audio Format')
 
 
-def read_real_time_audio():
+def read_real_time_audio(interval=1):
     """
     Reads real time audio from audio input and yields audio signal in numpy array format
 
@@ -33,7 +33,7 @@ def read_real_time_audio():
 
     try:
         rate = 44100
-        chunk_size = 44100
+        chunk_size = int(rate * interval)
 
         p = pyaudio.PyAudio()
         stream = p.open(format=pyaudio.paFloat32, channels=1, rate=rate, input=True, frames_per_buffer=chunk_size)

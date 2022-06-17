@@ -350,8 +350,9 @@ class main_window(tk.Tk):
 
 
 def main_gui():
+    interval = 0.5
     app = main_window()
-    audio_generator = read_real_time_audio()
+    audio_generator = read_real_time_audio(interval)
 
     def update_labels():
         f_0 = int(app.A4_freq.get())
@@ -394,7 +395,7 @@ def main_gui():
                 app.clear_labels()
                 app.no_update_count = 0
 
-        app.after(1000, update_labels)
+        app.after(int(1000 * interval), update_labels)
 
     update_labels()
     app.mainloop()
