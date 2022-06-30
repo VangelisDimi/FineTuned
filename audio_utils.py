@@ -15,18 +15,25 @@ def audio_fft(signal, sample_rate, samples=None):
     """
 
     if samples is None:
-        samples = len(signal)
-    yf = fft(signal)
-    xf = fftfreq(samples, 1 / sample_rate)[:samples // 2]
+        samples = len(signal)  # consider all samples in signal
 
-    # HPS
+    # perform Fast Fourier Transform
+
+    yf = fft(signal)
+    xf = fftfreq(samples, 1 / sample_rate)[:samples // 2]  # frequency bins
+
+    # HPS (Harmonic Power Spectrum)
     yf_original = yf.copy()
     hps_steps = 5
     for i in range(2, hps_steps, 1):
         yf[:int(np.ceil(len(yf) / i))] *= yf_original[::i]
 
+    # create a dictionary with frequencies and their amplitude
     frequencies = dict(zip(xf, samples * np.abs(yf[0:samples // 2])))
+
+    # get loudest frequency
     loudest_frequency = max(frequencies, key=frequencies.get)
+
     return frequencies, xf, yf, loudest_frequency, frequencies[loudest_frequency]
 
 
@@ -71,6 +78,8 @@ def frequency_to_note(input_frequency, input_frequency_amplitude, f_0=440.0):
     octave = None
 
     a = 2 ** (1 / 12)
+
+    # iterate notes and find the closest one
     for n in range(-50, 50):
         frequency = f_0 * a ** (n + 1)  # source: https://pages.mtu.edu/~suits/NoteFreqCalcs.html
 
@@ -84,9 +93,10 @@ def frequency_to_note(input_frequency, input_frequency_amplitude, f_0=440.0):
 
 def neighbour_note_frequency(note_frequency, frequency, f_0=440.0):
     """
+    Returns the frequency of the second nearest note (used to determine distance between GUI lamps)
 
     :param note_frequency: the closest note frequency
-    :param frequency: the input
+    :param frequency: the input frequency
     :param f_0: the frequency of A4 note (default: 440.0)
     :return: returns the frequency of the second closest note
     """
@@ -103,4 +113,4 @@ def neighbour_note_frequency(note_frequency, frequency, f_0=440.0):
 
 
 if __name__ == '__main__':
-    print(neighbour_note_frequency(440, 441))
+    pass

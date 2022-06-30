@@ -7,7 +7,7 @@ from audio_utils import audio_fft
 
 def read_audio_file(file_name):
     """
-    Converts an audio file to an audio signal in numpy array format
+    Converts an audio file to an audio signal in numpy array format (used for debugging)
 
     :param file_name: the name of the audio file to read
     :return: a tuple with the sample rate, the left channel and the right channel audio signal in numpy array format
