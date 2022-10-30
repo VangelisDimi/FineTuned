@@ -1,6 +1,6 @@
 # FineTuned
 A Chromatic Instrument Tuner in Python.  
-
+![alt text](https://github.com/VangelisDimi/FineTuned/blob/main/Assets/readme/screenshot.png)  
 [Demonstration video](https://www.youtube.com/watch?v=G7uHoLJ0PPk)
 
 ## Setup
